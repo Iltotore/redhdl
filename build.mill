@@ -1,0 +1,28 @@
+import mill.*, scalalib.*, scalafmt.*
+
+object `package` extends ScalaModule with ScalafmtModule:
+
+  def scalaVersion = "3.7.3"
+
+  //TODO Host kyo-parse on Github Package
+  val kyoVersion = "0.0.0+2686-ef8c8fe0-SNAPSHOT"
+
+  def mvnDeps = Seq(
+    mvn"io.getkyo::kyo-core:$kyoVersion",
+    mvn"io.getkyo::kyo-direct:$kyoVersion",
+    mvn"io.getkyo::kyo-parse:$kyoVersion",
+    mvn"io.github.iltotore::iron:3.2.0"
+  )
+
+  def scalacOptions = Seq(
+    "-Wvalue-discard", 
+    "-Wnonunit-statement", 
+    "-Wconf:msg=(unused.*value|discarded.*value|pure.*statement):error",
+    "-language:strictEquality"
+  )
+
+  object test extends ScalaTests with TestModule.Utest:
+
+    def utestVersion = "0.9.1"
+
+    def compileResources = resources
