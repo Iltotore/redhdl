@@ -1,10 +1,11 @@
-package io.github.iltotore.redhdl.parse
+package io.github.iltotore.redhdl.parser
 
 import io.github.iltotore.redhdl.ast.Identifier
 
-enum Token:
+enum Token derives CanEqual:
   case LBool(value: Boolean)
-  case Ident(identifier: Identifier)
+  case MainIdent(identifier: Identifier)
+  case SubIdent(subComponent: Identifier, name: Identifier)
 
   case NewLine
 
