@@ -1,6 +1,7 @@
 package io.github.iltotore.redhdl.parser
 
 import io.github.iltotore.redhdl.ast.Identifier
+import io.github.iltotore.redhdl.parser.debug
 import kyo.*
 
 object Lexer:
@@ -15,10 +16,14 @@ object Lexer:
 
   val keywords: Map[String, Token] = Map(
     "component" -> Token.Component,
+    "subcomponent" -> Token.Subcomponent,
     "input" -> Token.Input,
     "output" -> Token.Output,
     "begin" -> Token.Begin,
-    "end" -> Token.End
+    "end" -> Token.End,
+    "not" -> Token.Not,
+    "or" -> Token.Or,
+    "and" -> Token.And,
   )
 
   val parseTerm: Token < Parse[Char] = Parse.firstOf(
@@ -26,7 +31,7 @@ object Lexer:
     Parse.inOrder(
       Parse.identifier,
       Parse.literal('.'),
-      Parse.identifier
+      Parse.require(withErrorMessage(Parse.identifier, "Identifier expected after `.`")),
     ).map((sub, _, name) => Token.SubIdent(Identifier.assume(sub.toString), Identifier.assume(name.toString))),
     Parse.identifier.map(id => Token.MainIdent(Identifier.assume(id.toString)))
   )
@@ -46,11 +51,17 @@ object Lexer:
         case None        => Parse.fail("Invalid keyword")
     )
 
-  val parseAnyToken: Token < Parse[Char] = Parse.firstOf(
-    parseSymbol,
-    parseKeyword,
-    parseTerm
-  )
+  val parseAnyToken: Token < Parse[Char] =
+    val parser = Parse.firstOf(
+      parseSymbol,
+      parseKeyword,
+      parseTerm
+    )
+
+    Parse.recoverWith(
+      Parse.require(withErrorMessage(parser, "Invalid token")),
+      RecoverStrategy.skipThenRetryUntil(Parse.any, parser)
+    )
 
   val parseTokens: Chunk[Token] < Parse[Char] = 
-    Parse.entireInput(Parse.spaced(Parse.repeat(parseAnyToken)))
+    Parse.spaced(Parse.repeatUntil(parseAnyToken, Parse.end))

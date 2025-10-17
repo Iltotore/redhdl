@@ -18,7 +18,11 @@ enum Token derives CanEqual:
 
   // Keywords
   case Component
+  case Subcomponent
   case Input
   case Output
   case Begin
   case End
+  case Not
+  case Or
+  case And

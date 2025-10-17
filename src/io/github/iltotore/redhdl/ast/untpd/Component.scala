@@ -9,5 +9,6 @@ case class Component(
     name: Identifier,
     inputs: Chunk[(Identifier, Type)],
     outputs: Chunk[(Identifier, Type)],
+    subcomponents: Chunk[(Identifier, Identifier)],
     body: Chunk[(PortIdentifier, Expr)]
 )

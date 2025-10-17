@@ -12,9 +12,9 @@ input
 output
   out: Boolean
 subcomponent
-  notA: Not
-  notB: Not
-  notRes: Not
+  notA: Not,
+  notB: Not,
+  notRes: Not,
   or: Or
 begin
   notA.in = inA
@@ -33,5 +33,5 @@ enum Expr:
   case InputCall(identifier: PortIdentifier)
   
   case Not(expr: Expr)
-  case Or(expr: Expr)
-  case And(expr: Expr)
+  case Or(left: Expr, right: Expr)
+  case And(left: Expr, right: Expr)
