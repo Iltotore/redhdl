@@ -32,7 +32,7 @@ jobs:
       
       # ------ Kyo Workaround ------
 
-      # I actually miss uv and cargo here allowing direct inclusion of dependencies via source.
+      # I actually miss Python and Rust here allowing direct compilation of dependencies via source.
       # - JordanViknar
 
       - name: KYO - Setup SBT
@@ -48,7 +48,7 @@ jobs:
           cd ..
           rm -rf kyo-src
 
-      # ------ Resuming RedHDL sequence ------
+      # ------ Resuming Algorab sequence ------
 
       - name: Setup Mill, install dependencies & run tests
         run: ./millw test

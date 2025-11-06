@@ -32,7 +32,7 @@ jobs:
       
       # ------ Kyo Workaround ------
 
-      # I actually miss uv and cargo here allowing direct inclusion of dependencies via source.
+      # I actually miss Python and Rust here allowing direct compilation of dependencies via source.
       # - JordanViknar
 
       - name: KYO - Setup SBT
@@ -48,7 +48,7 @@ jobs:
           cd ..
           rm -rf kyo-src
 
-      # ------ Resuming RedHDL sequence ------
+      # ------ Resuming Algorab sequence ------
 
       - name: Setup Mill, install dependencies & run packaging
         run: ./millw assembly
@@ -67,5 +67,5 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: redhdl-artifacts-${{ steps.format-branch-name.outputs.formatted_branch }}
+          name: algorab-artifacts-${{ steps.format-branch-name.outputs.formatted_branch }}
           path: 'out/assembly.dest/*.jar'
