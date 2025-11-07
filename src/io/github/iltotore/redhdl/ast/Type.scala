@@ -1,4 +1,4 @@
 package io.github.iltotore.redhdl.ast
 
-enum Type:
+enum Type derives CanEqual:
   case Bool
