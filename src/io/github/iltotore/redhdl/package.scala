@@ -24,4 +24,5 @@ def compile(code: String): Result[Chunk[CompilerFailure], Program] =
     case Present(program) =>
       Typing.runGlobal(TypeChecker.checkProgram(program).andThen(program))
         .eval
+        .map(_._2)
         .mapFailure(parsed.errors ++ _)
