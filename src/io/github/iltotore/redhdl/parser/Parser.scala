@@ -4,9 +4,9 @@ import kyo.*
 import io.github.iltotore.redhdl.ast.Identifier
 import io.github.iltotore.redhdl.ast.PortIdentifier
 import io.github.iltotore.redhdl.ast.Type
-import io.github.iltotore.redhdl.ast.untpd.Component
-import io.github.iltotore.redhdl.ast.untpd.Expr
-import io.github.iltotore.redhdl.ast.untpd.Program
+import io.github.iltotore.redhdl.ast.Component
+import io.github.iltotore.redhdl.ast.Expr
+import io.github.iltotore.redhdl.ast.Program
 
 object Parser:
 
