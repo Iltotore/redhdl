@@ -32,7 +32,7 @@ object resources:
     Using.resource(Source.fromInputStream(Files.newInputStream(path), "UTF-8"))(_.mkString)
 
   def runGoldenTest(code: String): Unit =
-    val result = compile(code)
+    val result = typecheck(code)
     assert(!result.isFailure)
 
   transparent inline def goldenTests(): Unit =

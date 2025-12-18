@@ -7,9 +7,13 @@ import io.github.iltotore.redhdl.ast.Identifier
 
 object Main extends KyoApp:
 
+  /* 
+  ("out1", InputCall(identifier = Sub(subComponent = "id1", name = "out")))
+   */
+
   run:
     direct:
-      val code = Using.resource(Source.fromFile("test/resources/golden/good/subcomponent.red"))(_.mkString)
+      val code = Using.resource(Source.fromFile("test/resources/golden/good/subSubSubComponent.red"))(_.mkString)
 
       val typeResult = typecheck(code)
       Console.printLine(typeResult).now

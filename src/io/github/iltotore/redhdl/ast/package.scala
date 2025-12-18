@@ -4,4 +4,6 @@ import io.github.iltotore.iron.*
 import io.github.iltotore.iron.constraint.all.*
 
 type Identifier = Identifier.T
-object Identifier extends RefinedType[String, Not[Blank]]
+object Identifier extends RefinedType[String, Not[Blank]]:
+
+  given CanEqual[Identifier, Identifier] = CanEqual.derived

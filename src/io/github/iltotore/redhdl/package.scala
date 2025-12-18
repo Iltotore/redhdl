@@ -11,6 +11,8 @@ import io.github.iltotore.redhdl.ast.Identifier
 import io.github.iltotore.redhdl.graph.Expansion
 import io.github.iltotore.redhdl.graph.Expander
 import io.github.iltotore.redhdl.graph.ExpandedComponent
+import io.github.iltotore.redhdl.graph.Simplifier
+import io.github.iltotore.redhdl.graph.SimplifiedComponent
 
 def parse(code: String): ParseResult[Program] =
   direct:
@@ -31,5 +33,10 @@ def typecheck(code: String): Result[Chunk[CompilerFailure], Map[Identifier, Comp
         .eval
         .mapFailure(parsed.errors ++ _)
 
-def compile(entrypoint: Identifier, components: Map[Identifier, ComponentInfo]): ExpandedComponent =
-  Expansion.run(components)(Expander.expandComponent(components(entrypoint))).eval
+def compile(entrypoint: Identifier, components: Map[Identifier, ComponentInfo]): SimplifiedComponent =
+  Expander
+    .expandComponent(components(entrypoint))
+    .map(Simplifier.simplifyComponent)
+    .handle(
+      Expansion.run(components)
+    ).eval
