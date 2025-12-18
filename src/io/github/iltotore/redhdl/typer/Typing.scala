@@ -1,5 +1,7 @@
 package io.github.iltotore.redhdl.typer
 
+import io.github.iltotore.redhdl.ast.Identifier
+import io.github.iltotore.redhdl.ast.Program
 import kyo.*
 
 type Typing = Emit[TypeFailure] & Abort[Unit]
@@ -9,16 +11,16 @@ object Typing:
   type Global = Var[GlobalContext] & Typing
   type Component = Var[ComponentContext] & Typing
 
-  def runGlobal[A, S](body: A < (Typing.Global & S)): Result[Chunk[TypeFailure], A] < S =
+  def runGlobal[S](body: Unit < (Typing.Global & S)): Result[Chunk[TypeFailure], Map[Identifier, ComponentInfo]] < S =
     body.handle(
-      Var.run(GlobalContext.default),
+      Var.runTuple(GlobalContext.default),
       Abort.runPartialOrThrow,
       Emit.run(_)
     )
       .map((failures, out) =>
         out match
-          case Result.Success(value) if failures.isEmpty => Result.Success(value)
-          case _                                         => Result.Failure(failures)
+          case Result.Success((ctx, _)) if failures.isEmpty => Result.Success(ctx.components)
+          case _                                            => Result.Failure(failures)
       )
 
   def fail(failure: TypeFailure): Unit < Typing = Emit.value(failure)

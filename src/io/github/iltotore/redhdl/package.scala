@@ -6,6 +6,11 @@ import io.github.iltotore.redhdl.parser.Lexer
 import io.github.iltotore.redhdl.parser.Parser
 import io.github.iltotore.redhdl.typer.Typing
 import io.github.iltotore.redhdl.typer.TypeChecker
+import io.github.iltotore.redhdl.typer.ComponentInfo
+import io.github.iltotore.redhdl.ast.Identifier
+import io.github.iltotore.redhdl.graph.Expansion
+import io.github.iltotore.redhdl.graph.Expander
+import io.github.iltotore.redhdl.graph.ExpandedComponent
 
 def parse(code: String): ParseResult[Program] =
   direct:
@@ -17,12 +22,14 @@ def parse(code: String): ParseResult[Program] =
         parseResult.copy(errors = lexResult.errors ++ parseResult.errors)
   .eval
 
-def compile(code: String): Result[Chunk[CompilerFailure], Program] =
+def typecheck(code: String): Result[Chunk[CompilerFailure], Map[Identifier, ComponentInfo]] =
   val parsed = parse(code)
   parsed.out match
     case Absent => Result.Failure(parsed.errors)
     case Present(program) =>
-      Typing.runGlobal(TypeChecker.checkProgram(program).andThen(program))
+      Typing.runGlobal(TypeChecker.checkProgram(program))
         .eval
-        .map(_._2)
         .mapFailure(parsed.errors ++ _)
+
+def compile(entrypoint: Identifier, components: Map[Identifier, ComponentInfo]): ExpandedComponent =
+  Expansion.run(components)(Expander.expandComponent(components(entrypoint))).eval
