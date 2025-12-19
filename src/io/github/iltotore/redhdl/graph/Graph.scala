@@ -19,6 +19,8 @@ case class Graph(inputs: Map[Identifier, NodeId], nodes: Chunk[Node]):
   def modifyNode(id: NodeId, f: Node => Node): Graph =
     this.copy(nodes = nodes.updated(id.value, f(getNode(id))))
 
+  def getOutputs(id: NodeId): Chunk[NodeId] = getNode(id).outputs
+
 object Graph:
 
   def fromInputs(inputs: Chunk[Identifier]): Graph =  

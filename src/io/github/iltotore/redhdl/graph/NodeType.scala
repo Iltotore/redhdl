@@ -11,3 +11,4 @@ enum NodeType:
   case Not
   case Or
   case And
+  case Relay

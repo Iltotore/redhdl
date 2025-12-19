@@ -16,6 +16,8 @@ import io.github.iltotore.redhdl.ir.SimplifiedComponent
 import io.github.iltotore.redhdl.graph.GraphBuilder
 import io.github.iltotore.redhdl.graph.GraphBuilding
 import io.github.iltotore.redhdl.graph.Graph
+import io.github.iltotore.redhdl.graph.NodeId
+import io.github.iltotore.redhdl.graph.GraphLayout
 
 def parse(code: String): ParseResult[Program] =
   direct:
@@ -36,11 +38,12 @@ def typecheck(code: String): Result[Chunk[CompilerFailure], Map[Identifier, Comp
         .eval
         .mapFailure(parsed.errors ++ _)
 
-def compile(entrypoint: Identifier, components: Map[Identifier, ComponentInfo]): Graph =
+def compileToGraph(entrypoint: Identifier, components: Map[Identifier, ComponentInfo]): Graph =
   Expander
     .expandComponent(components(entrypoint))
     .map(Simplifier.simplifyComponent)
     .map(GraphBuilding.buildGraph)
-    .handle(
-      Expansion.run(components)
-    ).eval
+    .handle(Expansion.run(components)).eval
+
+def compileToSchem(graph: Graph): Chunk[Chunk[NodeId]] =
+  GraphLayout.getLayers(graph)

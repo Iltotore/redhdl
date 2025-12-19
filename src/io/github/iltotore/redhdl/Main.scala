@@ -21,6 +21,8 @@ object Main extends KyoApp:
 
       typeResult match
         case Result.Success(components) =>
-          Console.printLine(compile(Identifier("BiIdentity"), components)).now
+          val graph = compileToGraph(Identifier("BiIdentity"), components)
+          Console.printLine(graph).now
+          Console.printLine(compileToSchem(graph)).now
         case _ => Console.printLine(typeResult).now
     

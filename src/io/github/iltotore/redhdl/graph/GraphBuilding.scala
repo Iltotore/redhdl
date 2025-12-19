@@ -12,4 +12,5 @@ object GraphBuilding:
     Var.runTuple(Graph.fromInputs(inputs))(body)
 
   def buildGraph(component: SimplifiedComponent): Graph =
+    println(pprint(component))
     run(component.inputs)(GraphBuilder.buildOutputsGraph(component.outputs)).eval._1
