@@ -15,10 +15,18 @@ object Expander:
     Identifier.assume(s"$prefix$$$suffix")
 
   def expandExpr(expr: Expr): Expr = expr match
-    case Expr.InputCall(PortIdentifier.Sub(subComponent, name)) =>
-      Expr.InputCall(PortIdentifier.Main(prefixIdentifier(subComponent, name)))
-    case _ => expr
-
+    case Expr.LBool(value) => Expr.LBool(value)
+    case Expr.InputCall(identifier) =>
+      identifier match
+        case PortIdentifier.Main(name) =>
+          Expr.InputCall(PortIdentifier.Main(name))
+        case PortIdentifier.Sub(subComponent, name) =>
+          Expr.InputCall(PortIdentifier.Main(prefixIdentifier(subComponent, name)))
+      
+    case Expr.Not(expr) => Expr.Not(expandExpr(expr))
+    case Expr.Or(left, right) => Expr.Or(expandExpr(left), expandExpr(right))
+    case Expr.And(left, right) => Expr.And(expandExpr(left), expandExpr(right))
+  
   def prefixExpr(prefix: Identifier, expr: Expr): Expr = expr match
     case Expr.LBool(value) => Expr.LBool(value)
     case Expr.InputCall(identifier) =>
