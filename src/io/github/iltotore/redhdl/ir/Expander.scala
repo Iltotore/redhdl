@@ -1,4 +1,4 @@
-package io.github.iltotore.redhdl.graph
+package io.github.iltotore.redhdl.ir
 
 import io.github.iltotore.redhdl.ast.Expr
 import io.github.iltotore.redhdl.ast.Identifier
@@ -6,6 +6,8 @@ import io.github.iltotore.redhdl.ast.PortIdentifier
 import io.github.iltotore.redhdl.ast.Type
 import io.github.iltotore.redhdl.typer.ComponentInfo
 import kyo.*
+import io.github.iltotore.redhdl.ir.ExpandedComponent
+import io.github.iltotore.redhdl.ir.Expansion
 
 object Expander:
 

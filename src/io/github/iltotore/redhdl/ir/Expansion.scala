@@ -1,4 +1,4 @@
-package io.github.iltotore.redhdl.graph
+package io.github.iltotore.redhdl.ir
 
 import kyo.*
 import io.github.iltotore.redhdl.ast.Identifier

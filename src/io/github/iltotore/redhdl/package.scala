@@ -8,11 +8,11 @@ import io.github.iltotore.redhdl.typer.Typing
 import io.github.iltotore.redhdl.typer.TypeChecker
 import io.github.iltotore.redhdl.typer.ComponentInfo
 import io.github.iltotore.redhdl.ast.Identifier
-import io.github.iltotore.redhdl.graph.Expansion
-import io.github.iltotore.redhdl.graph.Expander
-import io.github.iltotore.redhdl.graph.ExpandedComponent
-import io.github.iltotore.redhdl.graph.Simplifier
-import io.github.iltotore.redhdl.graph.SimplifiedComponent
+import io.github.iltotore.redhdl.ir.Expansion
+import io.github.iltotore.redhdl.ir.Expander
+import io.github.iltotore.redhdl.ir.ExpandedComponent
+import io.github.iltotore.redhdl.ir.Simplifier
+import io.github.iltotore.redhdl.ir.SimplifiedComponent
 import io.github.iltotore.redhdl.graph.GraphBuilder
 import io.github.iltotore.redhdl.graph.GraphBuilding
 import io.github.iltotore.redhdl.graph.Graph

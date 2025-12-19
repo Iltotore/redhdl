@@ -1,8 +1,10 @@
-package io.github.iltotore.redhdl.graph
+package io.github.iltotore.redhdl.ir
 
 import io.github.iltotore.redhdl.ast.Expr
 import io.github.iltotore.redhdl.ast.PortIdentifier
 import kyo.Chunk
+import io.github.iltotore.redhdl.ir.ExpandedComponent
+import io.github.iltotore.redhdl.ir.SimplifiedComponent
 
 object Simplifier:
 

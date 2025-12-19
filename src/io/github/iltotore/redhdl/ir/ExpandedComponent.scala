@@ -1,4 +1,4 @@
-package io.github.iltotore.redhdl.graph
+package io.github.iltotore.redhdl.ir
 
 import io.github.iltotore.redhdl.ast.Expr
 import io.github.iltotore.redhdl.ast.Identifier
