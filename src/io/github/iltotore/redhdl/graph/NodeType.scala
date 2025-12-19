@@ -1,8 +1,10 @@
 package io.github.iltotore.redhdl.graph
 
+import io.github.iltotore.redhdl.ast.Identifier
+
 enum NodeType:
-  case Input
-  case Output
+  case Input(name: Identifier)
+  case Output(name: Identifier)
   
   case True
   case False
