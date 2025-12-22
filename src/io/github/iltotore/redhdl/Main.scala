@@ -13,7 +13,7 @@ object Main extends KyoApp:
 
   run:
     direct:
-      val code = Using.resource(Source.fromFile("test/resources/golden/good/subSubSubComponent.red"))(_.mkString)
+      val code = Using.resource(Source.fromFile("test/resources/golden/good/and.red"))(_.mkString)
 
       val typeResult = typecheck(code)
       Console.printLine(typeResult).now
@@ -21,7 +21,7 @@ object Main extends KyoApp:
 
       typeResult match
         case Result.Success(components) =>
-          val graph = compileToGraph(Identifier("BiIdentity"), components)
+          val graph = compileToGraph(Identifier("And"), components)
           Console.printLine(graph).now
           Console.printLine(compileToSchem(graph)).now
         case _ => Console.printLine(typeResult).now

@@ -26,7 +26,7 @@ object GlobalContext:
       subcomponents = Chunk.empty,
       body = Chunk(
         PortIdentifier.Main(Identifier("out")) -> Expr.Not(
-          Expr.InputCall(PortIdentifier.Main(Identifier("out")))
+          Expr.InputCall(PortIdentifier.Main(Identifier("in")))
         )
       )
     ),

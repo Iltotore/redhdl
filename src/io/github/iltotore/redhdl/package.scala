@@ -1,6 +1,7 @@
 package io.github.iltotore.redhdl
 
 import kyo.*
+import kyo.Channel as KyoChannel
 import io.github.iltotore.redhdl.ast.Program
 import io.github.iltotore.redhdl.parser.Lexer
 import io.github.iltotore.redhdl.parser.Parser
@@ -17,7 +18,8 @@ import io.github.iltotore.redhdl.graph.GraphBuilder
 import io.github.iltotore.redhdl.graph.GraphBuilding
 import io.github.iltotore.redhdl.graph.Graph
 import io.github.iltotore.redhdl.graph.NodeId
-import io.github.iltotore.redhdl.graph.GraphLayout
+import io.github.iltotore.redhdl.graph.GraphRouter
+import io.github.iltotore.redhdl.graph.Channel
 
 def parse(code: String): ParseResult[Program] =
   direct:
@@ -45,5 +47,5 @@ def compileToGraph(entrypoint: Identifier, components: Map[Identifier, Component
     .map(GraphBuilding.buildGraph)
     .handle(Expansion.run(components)).eval
 
-def compileToSchem(graph: Graph): Chunk[Chunk[NodeId]] =
-  GraphLayout.getLayers(graph)
+def compileToSchem(graph: Graph): Chunk[Channel] =
+  GraphRouter.routeGraph(graph)

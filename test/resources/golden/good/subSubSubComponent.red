@@ -45,6 +45,6 @@ begin
   id1.in = in1
   id2.in = in2
 
-  out1 = id1.out and (true or false) or id2.out
+  out1 = id1.out and (true or false)
   out2 = id2.out or (true and false)
 end
