@@ -19,7 +19,7 @@ case class Graph(inputs: Map[Identifier, NodeId], nodes: Chunk[Node]):
   def modifyNode(id: NodeId, f: Node => Node): Graph =
     this.copy(nodes = nodes.updated(id.value, f(getNode(id))))
 
-  def getOutputs(id: NodeId): Chunk[NodeId] = getNode(id).outputs
+  def getOutputs(id: NodeId): Chunk[NodeOutput] = getNode(id).outputs
 
 object Graph:
 
@@ -47,8 +47,8 @@ object Graph:
   def addNode(node: Node): NodeId < GraphBuilding =
     modifyReturn(_.withNode(node))
 
-  def addOutput(input: NodeId, output: NodeId): Unit < GraphBuilding =
+  def addOutput(input: NodeId, output: NodeOutput): Unit < GraphBuilding =
     modify(_.modifyNode(input, _.withOutput(output)))
 
-  def createOutput(output: NodeId, nodeType: NodeType): NodeId < GraphBuilding =
+  def createOutput(output: NodeOutput, nodeType: NodeType): NodeId < GraphBuilding =
     addNode(Node(nodeType, Chunk.empty)).map(id => addOutput(id, output).andThen(id))

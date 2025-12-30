@@ -20,7 +20,7 @@ object GraphRouter:
 
     for (node, id) <- graph.nodes.zipWithIndex do
       inputDegree.getOrElseUpdate(NodeId.assume(id), 0): Unit
-      node.outputs.foreach(output => inputDegree(output) += 1)
+      node.outputs.foreach(output => inputDegree(output.id) += 1)
 
     val layers = mutable.ListBuffer[Chunk[NodeId]]()
     var zeroInputDegree = inputDegree
@@ -35,8 +35,8 @@ object GraphRouter:
 
       for id <- zeroInputDegree do
         for output <- graph.getOutputs(id) do
-          inputDegree(output) -= 1
-          if (inputDegree(output) == 0) nextZero += output
+          inputDegree(output.id) -= 1
+          if (inputDegree(output.id) == 0) nextZero += output.id
 
         inputDegree.remove(id)
 
@@ -48,18 +48,28 @@ object GraphRouter:
     Chunk.from(layers)
 
   //Might just be replaced by a zipWithIndex in getChannel in the future
-  def getXPositions(numberOfNodes: Int, layers: Chunk[Chunk[NodeId]]): Chunk[PinX] =
-    val positions = new Array[PinX](numberOfNodes)
-    layers.foreach(_.zipWithIndex.foreach((id, x) => positions(id.value) = PinX.assume(x)))
-    Chunk.from(positions)
+  def getXPositions(graph: Graph, layers: Chunk[Chunk[NodeId]]): Map[NodeOutput, PinX] =
+    val positions = mutable.Map.empty[NodeOutput, PinX]
 
-  def createChannel(graph: Graph, xPos: Chunk[PinX], from: Chunk[NodeId], to: Chunk[NodeId]): Channel =
+    for layer <- layers do
+      var x = PinX(0)
+      for
+        id <- layer
+        input <- 0 until graph.getNode(id).tpe.width
+      do
+        positions(NodeOutput(id, input)) = x
+        x += 1
+
+    positions.toMap
+
+  //See https://github.com/itsfrank/MinecraftHDL/blob/c66690ae2f1ee2b04aae214a694eb6fe0e03d326/src/main/java/minecrafthdl/synthesis/routing/Router.java#L91
+  def createChannel(graph: Graph, xPos: Map[NodeOutput, PinX], from: Chunk[NodeId], to: Chunk[NodeId]): Channel =
     Channel(
       from
         .map(fromId =>
-          val netNodes = graph.getOutputs(fromId) :+ fromId
-          val positions = netNodes.map(id => xPos(id.value))
-          Net(positions.min, positions.max)
+          val netOutputs = graph.getOutputs(fromId)
+          val positions = netOutputs.map(xPos)
+          Net(xPos(NodeOutput(fromId, 0)), positions.foldLeft(PinX(0))(_ max _))
         ),
       Chunk.empty
     )
@@ -91,9 +101,9 @@ object GraphRouter:
 
   // https://rtldigitaldesign.blogspot.com/2019/07/left-edge-channel-algorithm-for.html
   @nowarn("msg=exhaustive")
-  def routeGraph(graph: Graph): Chunk[Channel] =
-    val layers = getLayers(graph)
-    val xPos = getXPositions(graph.nodes.size, layers)
+  def routeGraph(graph: Graph, layers: Chunk[Chunk[NodeId]]): Chunk[Channel] =
+    val xPos = getXPositions(graph, layers)
+    println(pprint(xPos))
     Chunk.from(
       layers.sliding(2).map:
         case Chunk(from, to) =>

@@ -16,3 +16,6 @@ type PinX = PinX.T
 object PinX extends RefinedType[Int, Positive0]:
 
   given Ordering[PinX] = PinX.assumeAll(Ordering.Int)
+
+  extension (x: PinX)
+    def +(y: Int): PinX = PinX.assume(x.value + y)

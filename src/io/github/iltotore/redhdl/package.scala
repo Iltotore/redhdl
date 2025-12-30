@@ -47,5 +47,5 @@ def compileToGraph(entrypoint: Identifier, components: Map[Identifier, Component
     .map(GraphBuilding.buildGraph)
     .handle(Expansion.run(components)).eval
 
-def compileToSchem(graph: Graph): Chunk[Channel] =
-  GraphRouter.routeGraph(graph)
+def compileToSchem(graph: Graph, layers: Chunk[Chunk[NodeId]]): Chunk[Channel] =
+  GraphRouter.routeGraph(graph, layers)
