@@ -65,15 +65,40 @@ object GraphRouter:
   //See https://github.com/itsfrank/MinecraftHDL/blob/c66690ae2f1ee2b04aae214a694eb6fe0e03d326/src/main/java/minecrafthdl/synthesis/routing/Router.java#L91
   def createChannel(graph: Graph, xPos: Map[NodeOutput, PinX], from: Chunk[NodeId], to: Chunk[NodeId]): Channel =
     Channel(
-      from
-        .map(fromId =>
-          val netOutputs = graph.getOutputs(fromId)
-          val positions = netOutputs.map(xPos)
-          Net(xPos(NodeOutput(fromId, 0)), positions.foldLeft(PinX(0))(_ max _))
-        ),
+      for
+        nodeId <- from
+        outputPositions = graph.getOutputs(nodeId).map(xPos.apply)
+        if !outputPositions.isEmpty
+      yield
+        Net(xPos(NodeOutput(nodeId, 0)), outputPositions.max),
       Chunk.empty
     )
 
+  /*
+  0 1 2 3
+  +   | |
+  --- | |
+    + | |
+    | | |
+    | | +
+  -------
+  + | |
+  0 1 2
+
+  Net0: left = 0, right = 1
+  Net1: left = 2, right = 2
+  Net2: left = 0, right = 3
+
+  Pour Net0:
+    - Track 0: [Net0] (end = 1)
+
+  Pour Net1:
+    - Track 0 (car Net1.left > Track0.end): [Net0, Net1] (end = 2)
+
+  Pour Net2:
+    - Track 0 (car Net1.left > Track0.end): [Net0, Net1] (end = 2)
+    - Track 1: [Net2] (end = 3)
+  */
   def assignTrack(channel: Channel, netId: NetId): Channel =
     val net = channel.nets(netId.value)
     val availableTrack = channel.tracks.zipWithIndex.find((track, _) => channel.getTrackEnd(track) < net.left)
@@ -103,7 +128,6 @@ object GraphRouter:
   @nowarn("msg=exhaustive")
   def routeGraph(graph: Graph, layers: Chunk[Chunk[NodeId]]): Chunk[Channel] =
     val xPos = getXPositions(graph, layers)
-    println(pprint(xPos))
     Chunk.from(
       layers.sliding(2).map:
         case Chunk(from, to) =>
