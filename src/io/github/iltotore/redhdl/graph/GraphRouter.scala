@@ -6,6 +6,7 @@ import kyo.Present
 import scala.collection.mutable
 import scala.math.Ordering.Implicits.infixOrderingOps
 import scala.annotation.nowarn
+import kyo.Maybe
 
 object GraphRouter:
 
@@ -70,9 +71,27 @@ object GraphRouter:
         outputPositions = graph.getOutputs(nodeId).map(xPos.apply)
         if !outputPositions.isEmpty
       yield
-        Net(xPos(NodeOutput(nodeId, 0)), outputPositions.max),
-      Chunk.empty
+        Net(xPos(NodeOutput(nodeId, 0)), outputPositions.max, Absent),
+      Chunk.empty,
+      Absent
     )
+
+  def hasCycleAt(channel: Channel, done: Set[NetId], at: Net): Boolean =
+    def rec(current: PinX): Boolean =
+      val (id, net) = channel.getNetAt(current)
+      if net.start == net.end || done.contains(id) then false
+      else if current == at.start then true
+      else rec(net.end)
+
+    rec(at.end)
+
+  /**
+   * Break the cycle if it exists at the given net by creating an out column/net 
+   */
+  def breakCycle(channel: Channel, done: Set[NetId], netId: NetId): (Channel, Set[NetId]) =
+    val net = channel.getNet(netId)
+    if hasCycleAt(channel, done, net) then (channel.reroute(netId), done + netId)
+    else (channel, done + netId)
 
   /*
   0 1 2 3
@@ -120,9 +139,19 @@ object GraphRouter:
         )
 
   def routeChannel(channel: Channel): Channel =
-    NetId
-      .assumeAll(Chunk.range(0, channel.nets.size))
-      .foldLeft(channel)(assignTrack)
+    val sortedNets = Chunk
+      .range(NetId(0), NetId.assume(channel.nets.size))
+      .sortBy(id => 
+        val net = channel.getNet(id)
+        (net.left, net.right)
+      )
+
+    val (withoutCycle, _) = sortedNets.foldLeft((channel, Set.empty[NetId])):
+      case ((channel, done), id) =>
+        breakCycle(channel, done, id)
+
+    val sortedNetsThenOuters = sortedNets ++ Chunk.range(NetId.assume(sortedNets.size), NetId.assume(withoutCycle.nets.size))
+    sortedNetsThenOuters.foldLeft(withoutCycle)(assignTrack)
 
   // https://rtldigitaldesign.blogspot.com/2019/07/left-edge-channel-algorithm-for.html
   @nowarn("msg=exhaustive")
@@ -135,3 +164,21 @@ object GraphRouter:
           routeChannel(channel)
     )
 
+/*
+A: colonne 0-3
+B: colonne 1-4
+C: colonne 2-5
+
+Pour Swap3:
+
+A -> B
+B -> C
+C -> A
+
+aka A -> B -> C -> A
+
+Si on brise le cycle:
+
+A -> D -> B
+B -> C -> A
+*/

@@ -7,13 +7,17 @@ type NodeId = NodeId.T
 object NodeId extends RefinedType[Int, Positive0]
 
 type NetId = NetId.T
-object NetId extends RefinedType[Int, Positive0]
+object NetId extends RefinedType[Int, Positive0]:
+
+  given Integral[NetId] = NetId.assumeAll(Numeric.IntIsIntegral)
 
 type TrackId = TrackId.T
 object TrackId extends RefinedType[Int, Positive0]
 
 type PinX = PinX.T
 object PinX extends RefinedType[Int, Positive0]:
+
+  given CanEqual[PinX, PinX] = CanEqual.derived
 
   given Ordering[PinX] = PinX.assumeAll(Ordering.Int)
 
