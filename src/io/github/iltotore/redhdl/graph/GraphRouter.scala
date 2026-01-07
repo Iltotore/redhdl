@@ -156,7 +156,7 @@ object GraphRouter:
     while !queue.isEmpty do
       val (net, id) = queue.dequeue()
       
-      if degrees.getOrElse(net.end, 0) == 0 then
+      if degrees.getOrElse(net.end, 0) == 0 || net.start == net.end then
         result += NetId.assume(id)
         degrees(net.start) -= 1
       else
@@ -166,13 +166,16 @@ object GraphRouter:
 
 
   def routeChannel(channel: Channel): Channel =
+    println(s"Channel: $channel")
     val (withoutCycle, _) = Chunk
       .range(NetId(0), NetId.assume(channel.nets.size))
       .foldLeft((channel, Set.empty[NetId])):
         case ((channel, done), id) =>
           breakCycle(channel, done, id)
 
+    println(s"Without cycle: $withoutCycle")
     val sortedNets = sortNets(withoutCycle)
+    println(s"Sorted nets: $sortedNets")
 
     val sortedNetsThenOuters = sortedNets ++ Chunk.range(NetId.assume(sortedNets.size), NetId.assume(withoutCycle.nets.size))
     sortedNetsThenOuters.foldLeft(withoutCycle)(assignTrack)
