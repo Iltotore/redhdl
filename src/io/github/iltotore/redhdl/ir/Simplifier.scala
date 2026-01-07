@@ -28,6 +28,8 @@ object Simplifier:
     case Expr.Or(Expr.LBool(false), right) => right
     case Expr.Or(_, Expr.LBool(true)) => Expr.LBool(true)
     case Expr.Or(Expr.LBool(true), _) => Expr.LBool(true)
+    case Expr.Xor(left, Expr.LBool(false)) => left
+    case Expr.Xor(Expr.LBool(false), right) => right
     case _ => expr 
   
   def simplifyExpr(component: ExpandedComponent, expr: Expr): Expr =
@@ -42,6 +44,7 @@ object Simplifier:
       case Expr.Not(expr) => Expr.Not(simplifyExpr(component, expr))
       case Expr.Or(left, right) => Expr.Or(simplifyExpr(component, left), simplifyExpr(component, right))
       case Expr.And(left, right) => Expr.And(simplifyExpr(component, left), simplifyExpr(component, right))
+      case Expr.Xor(left, right) => Expr.Xor(simplifyExpr(component, left), simplifyExpr(component, right))
 
     optimizeSimplified(simplified)
   

@@ -29,6 +29,12 @@ object GraphBuilder:
           _ <- buildExprGraph(NodeOutput(id, 0), left)
           _ <- buildExprGraph(NodeOutput(id, 1), right)
         yield ()
+      case Expr.Xor(left, right) =>
+        for
+          id <- Graph.createOutput(output, NodeType.Xor)
+          _ <- buildExprGraph(NodeOutput(id, 0), left)
+          _ <- buildExprGraph(NodeOutput(id, 1), right)
+        yield ()
 
   def buildOutputsGraph(outputs: Map[Identifier, Expr]): Unit < GraphBuilding =
     Kyo.foreachDiscard(outputs)((output, expr) =>

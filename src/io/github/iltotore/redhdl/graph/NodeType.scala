@@ -11,6 +11,7 @@ enum NodeType derives CanEqual:
   case Not
   case Or
   case And
+  case Xor
   case Relay
 
   def width: Int = this match
@@ -21,4 +22,5 @@ enum NodeType derives CanEqual:
     case Not       => 1
     case Or        => 2
     case And       => 2
+    case Xor       => 2
     case Relay     => 1

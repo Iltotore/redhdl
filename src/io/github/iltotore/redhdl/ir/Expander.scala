@@ -26,6 +26,7 @@ object Expander:
     case Expr.Not(expr) => Expr.Not(expandExpr(expr))
     case Expr.Or(left, right) => Expr.Or(expandExpr(left), expandExpr(right))
     case Expr.And(left, right) => Expr.And(expandExpr(left), expandExpr(right))
+    case Expr.Xor(left, right) => Expr.Xor(expandExpr(left), expandExpr(right))
   
   def prefixExpr(prefix: Identifier, expr: Expr): Expr = expr match
     case Expr.LBool(value) => Expr.LBool(value)
@@ -36,6 +37,7 @@ object Expander:
     case Expr.Not(expr) => Expr.Not(prefixExpr(prefix, expr))
     case Expr.Or(left, right) => Expr.Or(prefixExpr(prefix, left), prefixExpr(prefix, right))
     case Expr.And(left, right) => Expr.And(prefixExpr(prefix, left), prefixExpr(prefix, right))
+    case Expr.Xor(left, right) => Expr.Xor(prefixExpr(prefix, left), prefixExpr(prefix, right))
 
   def expandComponent(component: ComponentInfo): ExpandedComponent < Expansion = direct:
     val flattenedBody = component.body.map:

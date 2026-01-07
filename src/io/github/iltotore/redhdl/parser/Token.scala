@@ -26,3 +26,4 @@ enum Token derives CanEqual:
   case Not
   case Or
   case And
+  case Xor

@@ -50,7 +50,8 @@ object Parser:
 
   private val boolOps: Map[Token, (Expr, Expr) => Expr] = Map(
     Token.Or -> Expr.Or.apply,
-    Token.And -> Expr.And.apply
+    Token.And -> Expr.And.apply,
+    Token.Xor -> Expr.Xor.apply
   )
 
   lazy val parsePrefix: Expr < Parse[Token] = Parse.firstOf(
