@@ -1,9 +1,9 @@
 component HalfAdder
 input
-  inA: Boolean
+  inA: Boolean,
   inB: Boolean
 output
-  sum: Boolean
+  sum: Boolean,
   carry: Boolean
 begin
   carry = inA and inB

@@ -7,6 +7,7 @@ import scala.collection.mutable
 import scala.math.Ordering.Implicits.infixOrderingOps
 import scala.annotation.nowarn
 import kyo.Maybe
+import scala.annotation.threadUnsafe
 
 object GraphRouter:
 
@@ -68,20 +69,20 @@ object GraphRouter:
     Channel(
       for
         nodeId <- from
-        outputPositions = graph.getOutputs(nodeId).map(xPos.apply)
-        if !outputPositions.isEmpty
+        outputPos <- graph.getOutputs(nodeId).map(xPos.apply)
       yield
-        Net(xPos(NodeOutput(nodeId, 0)), outputPositions.max, Absent),
+        Net(xPos(NodeOutput(nodeId, 0)), outputPos, Absent),
       Chunk.empty,
       Absent
     )
 
   def hasCycleAt(channel: Channel, done: Set[NetId], at: Net): Boolean =
     def rec(current: PinX): Boolean =
-      val (id, net) = channel.getNetAt(current)
-      if net.start == net.end || done.contains(id) then false
-      else if current == at.start then true
-      else rec(net.end)
+      channel.getNetAt(current).exists((id, net) =>
+        if net.start == net.end || done.contains(id) then false
+        else if current == at.start then true
+        else rec(net.end)
+      )
 
     rec(at.end)
 
@@ -138,17 +139,40 @@ object GraphRouter:
               .updated(trackId, track.copy(nets = track.nets :+ netId))
         )
 
-  def routeChannel(channel: Channel): Channel =
-    val sortedNets = Chunk
-      .range(NetId(0), NetId.assume(channel.nets.size))
-      .sortBy(id => 
-        val net = channel.getNet(id)
-        (net.left, net.right)
-      )
+  def sortNets(channel: Channel): Chunk[NetId] =
+    val innerNets = channel
+      .nets
+      .zipWithIndex
+      .filterNot((net, _) => channel.isOuterColumn(net.start))
 
-    val (withoutCycle, _) = sortedNets.foldLeft((channel, Set.empty[NetId])):
-      case ((channel, done), id) =>
-        breakCycle(channel, done, id)
+    val degrees = innerNets
+      .groupBy(_._1.start)
+      .map((x, nets) => (x, nets.size))
+      .to(mutable.Map)
+
+    val queue = innerNets.to(mutable.Queue)
+    val result = mutable.ListBuffer.empty[NetId]
+
+    while !queue.isEmpty do
+      val (net, id) = queue.dequeue()
+      
+      if degrees.getOrElse(net.end, 0) == 0 then
+        result += NetId.assume(id)
+        degrees(net.start) -= 1
+      else
+        queue.enqueue((net, id))
+
+    result.to(Chunk)
+
+
+  def routeChannel(channel: Channel): Channel =
+    val (withoutCycle, _) = Chunk
+      .range(NetId(0), NetId.assume(channel.nets.size))
+      .foldLeft((channel, Set.empty[NetId])):
+        case ((channel, done), id) =>
+          breakCycle(channel, done, id)
+
+    val sortedNets = sortNets(withoutCycle)
 
     val sortedNetsThenOuters = sortedNets ++ Chunk.range(NetId.assume(sortedNets.size), NetId.assume(withoutCycle.nets.size))
     sortedNetsThenOuters.foldLeft(withoutCycle)(assignTrack)

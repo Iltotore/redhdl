@@ -35,6 +35,10 @@ object TypeChecker:
         assertExprType(left, Type.Bool).now
         assertExprType(right, Type.Bool).now
         Type.Bool
+      case Expr.Xor(left, right) =>
+        assertExprType(left, Type.Bool).now
+        assertExprType(right, Type.Bool).now
+        Type.Bool
 
   def checkBody(body: Chunk[(PortIdentifier, Expr)]): Unit < Typing.Component = direct:
     body.foreach((name, expr) =>
