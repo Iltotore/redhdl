@@ -49,6 +49,52 @@ object GraphRouter:
 
     Chunk.from(layers)
 
+  def addRelays(graph: Graph, layers: Chunk[Chunk[NodeId]]): (Graph, Chunk[Chunk[NodeId]]) =
+    var updatedGraph = graph
+    var updatedLayers = layers
+
+    def getLayerOf(id: NodeId): Int =
+      updatedLayers
+        .zipWithIndex
+        .collectFirst:
+          case (layer, y) if layer.contains(id) => y
+        .get
+
+    for
+      (layer, y) <- layers.zipWithIndex
+      id <- layer
+      (output, outputIndex) <- updatedGraph.getNode(id).outputs.zipWithIndex
+      targetY = getLayerOf(output.id)
+      if targetY > y + 1
+    do
+      val node = updatedGraph.getNode(id)
+      val nextId = updatedGraph.nodes.size
+      val numberOfRelays = targetY - (y + 1)
+      val nextIdAfterRelays = nextId+numberOfRelays
+      val relayOutputs = Chunk
+        .range(nextIdAfterRelays-1, nextId-1, -1)
+        .map(id => NodeOutput(NodeId.assume(id), 0))
+
+      @nowarn("msg=exhaustive")
+      val nodes = relayOutputs
+        .prepended(output)
+        .init
+        .map(out => Node(NodeType.Relay, Chunk(out)))
+
+      val updatedNodeOutputs = node.outputs.updated(outputIndex, relayOutputs.last)
+      
+      updatedGraph = updatedGraph.copy(nodes =
+        updatedGraph
+          .nodes
+          .updated(id.value, node.copy(outputs = updatedNodeOutputs))
+          .appendedAll(nodes)
+      )
+
+      for (relay, y) <- relayOutputs.zip(y+1 until targetY) do
+        updatedLayers = updatedLayers.updated(y, updatedLayers(y) :+ relay.id)
+
+    (updatedGraph, updatedLayers)
+
   //Might just be replaced by a zipWithIndex in getChannel in the future
   def getXPositions(graph: Graph, layers: Chunk[Chunk[NodeId]]): Map[NodeOutput, PinX] =
     val positions = mutable.Map.empty[NodeOutput, PinX]
@@ -164,18 +210,14 @@ object GraphRouter:
 
     result.to(Chunk)
 
-
   def routeChannel(channel: Channel): Channel =
-    println(s"Channel: $channel")
     val (withoutCycle, _) = Chunk
       .range(NetId(0), NetId.assume(channel.nets.size))
       .foldLeft((channel, Set.empty[NetId])):
         case ((channel, done), id) =>
           breakCycle(channel, done, id)
 
-    println(s"Without cycle: $withoutCycle")
     val sortedNets = sortNets(withoutCycle)
-    println(s"Sorted nets: $sortedNets")
 
     val sortedNetsThenOuters = sortedNets ++ Chunk.range(NetId.assume(sortedNets.size), NetId.assume(withoutCycle.nets.size))
     sortedNetsThenOuters.foldLeft(withoutCycle)(assignTrack)
