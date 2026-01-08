@@ -13,7 +13,9 @@ import io.github.iltotore.redhdl.graph.Net
 
 object Main extends KyoApp:
 
-  def idToChar(id: NodeId): Char = ('A' + id.value).toChar
+  def idToChar(id: NodeId): Char =
+    if id.value >= 26 then ('a' + id.value - 26).toChar
+    else ('A' + id.value).toChar
   
   /*
   String representation of the circuit
@@ -40,7 +42,7 @@ object Main extends KyoApp:
     def drawNet(from: Int, net: Net, id: NetId, color: String): Unit =
       val netStartX = net.start.value * 2
       val netEndX = net.end.value * 2
-      val trackZ = channel.getNetTrack(id).value * 4 + 1
+      val trackZ = channel.getNetTrack(id).get.value * 4 + 1
       def colored(str: String): String = s"$color$str${scala.Console.RESET}"
       
       for
@@ -77,7 +79,7 @@ object Main extends KyoApp:
 
   run:
     direct:
-      val code = Using.resource(Source.fromFile("test/resources/golden/good/circuit/twoBitAdder.red"))(_.mkString)
+      val code = Using.resource(Source.fromFile("test/resources/golden/good/circuit/debug.red"))(_.mkString)
 
       val typeResult = typecheck(code)
       Console.printLine(typeResult).now
@@ -85,7 +87,7 @@ object Main extends KyoApp:
 
       typeResult match
         case Result.Success(components) =>
-          val initialGraph = compileToGraph(Identifier("TwoBitAdder"), components)
+          val initialGraph = compileToGraph(Identifier("Debug"), components)
           val initialLayers = GraphRouter.getLayers(initialGraph)
           val (graph, layers) = GraphRouter.addRelays(initialGraph, initialLayers)
           Console.printLine(graph).now

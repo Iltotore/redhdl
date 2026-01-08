@@ -171,9 +171,19 @@ object GraphRouter:
   */
   def assignTrack(channel: Channel, netId: NetId): Channel =
     val net = channel.nets(netId.value)
-    val availableTrack = channel.tracks.zipWithIndex.find((track, _) => channel.getTrackEnd(track) < net.left)
+    val availableTrack = channel
+      .tracks
+      .zipWithIndex.find((track, trackId) =>
+        val isTrackBeforeDest = channel
+          .getNetAt(net.end)
+          .flatMap((id, _) => channel.getNetTrack(id))
+          .exists(destTrackId => trackId <= destTrackId.value)
+
+        channel.getTrackEnd(track) < net.left && !isTrackBeforeDest
+      )
     availableTrack match
       case None =>
+        println(s"Assigned $netId to new track ${channel.tracks.size}")
         channel.copy(
           tracks =
             channel
@@ -182,6 +192,7 @@ object GraphRouter:
         )
 
       case Some((track, trackId)) =>
+        println(s"Assigned $netId to track $trackId")
         channel.copy(
           tracks =
             channel
