@@ -7,8 +7,6 @@ output
   sum: Boolean,
   carry: Boolean
 begin
-  xor1 = inA xor inB
-
-  sum = xor1 xor inCin
-  carry = (inA and inB) or (inCin and xor1)
+  sum = (inA xor inB) xor inCin
+  carry = (inA and inB) or (inCin and (inA xor inB))
 end

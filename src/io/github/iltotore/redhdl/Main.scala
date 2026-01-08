@@ -12,6 +12,8 @@ import io.github.iltotore.redhdl.graph.NetId
 import io.github.iltotore.redhdl.graph.Net
 
 object Main extends KyoApp:
+
+  def idToChar(id: NodeId): Char = ('A' + id.value).toChar
   
   /*
   String representation of the circuit
@@ -27,7 +29,7 @@ object Main extends KyoApp:
     )
 
     val headLine = layerFrom
-      .flatMap(id => Chunk.fill(graph.getNode(id).tpe.width)(Integer.toHexString(id.value).toUpperCase))
+      .flatMap(id => Chunk.fill(graph.getNode(id).tpe.width)(idToChar(id)))
       .mkString(" ")
 
     val width = layerSize * 2 - 1
@@ -75,7 +77,7 @@ object Main extends KyoApp:
 
   run:
     direct:
-      val code = Using.resource(Source.fromFile("test/resources/golden/good/circuits/fullAdder.red"))(_.mkString)
+      val code = Using.resource(Source.fromFile("test/resources/golden/good/circuit/twoBitAdder.red"))(_.mkString)
 
       val typeResult = typecheck(code)
       Console.printLine(typeResult).now
@@ -83,7 +85,7 @@ object Main extends KyoApp:
 
       typeResult match
         case Result.Success(components) =>
-          val initialGraph = compileToGraph(Identifier("FullAdder"), components)
+          val initialGraph = compileToGraph(Identifier("TwoBitAdder"), components)
           val initialLayers = GraphRouter.getLayers(initialGraph)
           val (graph, layers) = GraphRouter.addRelays(initialGraph, initialLayers)
           Console.printLine(graph).now

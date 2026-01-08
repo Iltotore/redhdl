@@ -25,7 +25,7 @@ object resources:
 
   def listResources(folder: String): Chunk[Path] =
     val path = getResourcePath(Main.getClass.getResource(folder))
-    val ls = Files.list(path)
+    val ls = Files.walk(path).filter(Files.isRegularFile(_))
     Chunk.from(ls.collect(Collectors.toList()).asScala)
 
   def readResource(path: Path): String =
