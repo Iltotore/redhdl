@@ -1,11 +1,25 @@
 package io.github.iltotore.redhdl
 
 import kyo.*
+import kyo.Channel as KyoChannel
 import io.github.iltotore.redhdl.ast.Program
 import io.github.iltotore.redhdl.parser.Lexer
 import io.github.iltotore.redhdl.parser.Parser
 import io.github.iltotore.redhdl.typer.Typing
 import io.github.iltotore.redhdl.typer.TypeChecker
+import io.github.iltotore.redhdl.typer.ComponentInfo
+import io.github.iltotore.redhdl.ast.Identifier
+import io.github.iltotore.redhdl.ir.Expansion
+import io.github.iltotore.redhdl.ir.Expander
+import io.github.iltotore.redhdl.ir.ExpandedComponent
+import io.github.iltotore.redhdl.ir.Simplifier
+import io.github.iltotore.redhdl.ir.SimplifiedComponent
+import io.github.iltotore.redhdl.graph.GraphBuilder
+import io.github.iltotore.redhdl.graph.GraphBuilding
+import io.github.iltotore.redhdl.graph.Graph
+import io.github.iltotore.redhdl.graph.NodeId
+import io.github.iltotore.redhdl.graph.GraphRouter
+import io.github.iltotore.redhdl.graph.Channel
 
 def parse(code: String): ParseResult[Program] =
   direct:
@@ -17,11 +31,21 @@ def parse(code: String): ParseResult[Program] =
         parseResult.copy(errors = lexResult.errors ++ parseResult.errors)
   .eval
 
-def compile(code: String): Result[Chunk[CompilerFailure], Program] =
+def typecheck(code: String): Result[Chunk[CompilerFailure], Map[Identifier, ComponentInfo]] =
   val parsed = parse(code)
   parsed.out match
     case Absent => Result.Failure(parsed.errors)
     case Present(program) =>
-      Typing.runGlobal(TypeChecker.checkProgram(program).andThen(program))
+      Typing.runGlobal(TypeChecker.checkProgram(program))
         .eval
         .mapFailure(parsed.errors ++ _)
+
+def compileToGraph(entrypoint: Identifier, components: Map[Identifier, ComponentInfo]): Graph =
+  Expander
+    .expandComponent(components(entrypoint))
+    .map(Simplifier.simplifyComponent)
+    .map(GraphBuilding.buildGraph)
+    .handle(Expansion.run(components)).eval
+
+def compileToSchem(graph: Graph, layers: Chunk[Chunk[NodeId]]): Chunk[Channel] =
+  GraphRouter.routeGraph(graph, layers)

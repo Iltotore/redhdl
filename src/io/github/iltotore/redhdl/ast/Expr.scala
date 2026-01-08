@@ -11,3 +11,4 @@ enum Expr:
   case Not(expr: Expr)
   case Or(left: Expr, right: Expr)
   case And(left: Expr, right: Expr)
+  case Xor(left: Expr, right: Expr)

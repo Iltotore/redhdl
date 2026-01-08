@@ -35,6 +35,10 @@ object TypeChecker:
         assertExprType(left, Type.Bool).now
         assertExprType(right, Type.Bool).now
         Type.Bool
+      case Expr.Xor(left, right) =>
+        assertExprType(left, Type.Bool).now
+        assertExprType(right, Type.Bool).now
+        Type.Bool
 
   def checkBody(body: Chunk[(PortIdentifier, Expr)]): Unit < Typing.Component = direct:
     body.foreach((name, expr) =>
@@ -70,17 +74,17 @@ object TypeChecker:
           (ports, subs)
         else
           GlobalContext.getComponent(comp).now match
-            case Some(io) =>
-              val newIns = io.inputs.map((inName, _) => PortIdentifier.Sub(name, inName))
-              (ports ++ newIns, subs.updated(name, io))
+            case Some(info) =>
+              val newIns = info.io.inputs.map((inName, _) => PortIdentifier.Sub(name, inName))
+              (ports ++ newIns, subs.updated(name, info.io))
             case None =>
               Typing.fail(TypeFailure.UnknownComponent(comp)).now
               (ports, subs)
 
-    val io = ComponentIO(inputs, outputs)
+    val info = ComponentInfo(ComponentIO(inputs, outputs), component.subcomponents, component.body)
     val remainingPorts = outputs.map((name, _) => PortIdentifier.Main(name)).toSet ++ subPorts
-    Var.run(ComponentContext(io, subcomponents, remainingPorts))(checkBody(component.body)).now
-    GlobalContext.declareComponent(component.name, io).now
+    Var.run(ComponentContext(info.io, subcomponents, remainingPorts))(checkBody(component.body)).now
+    GlobalContext.declareComponent(component.name, info).now
 
   def checkProgram(program: Program): Unit < Typing.Global =
     Kyo.foreachDiscard(program.components)(checkComponent)

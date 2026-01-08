@@ -1,0 +1,26 @@
+component Identity
+input
+  in: Boolean
+output
+  out: Boolean
+begin
+  out = in
+end
+
+component BiIdentity
+input
+  in1: Boolean,
+  in2: Boolean
+output
+  out1: Boolean,
+  out2: Boolean
+subcomponent
+  id1: Identity,
+  id2: Identity
+begin
+  id1.in = in1
+  id2.in = in2
+
+  out1 = id1.out
+  out2 = id2.out
+end

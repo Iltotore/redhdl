@@ -24,6 +24,7 @@ object Lexer:
     "not" -> Token.Not,
     "or" -> Token.Or,
     "and" -> Token.And,
+    "xor" -> Token.Xor,
   )
 
   val parseTerm: Token < Parse[Char] = Parse.firstOf(
