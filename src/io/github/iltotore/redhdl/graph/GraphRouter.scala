@@ -75,13 +75,17 @@ object GraphRouter:
         .range(nextIdAfterRelays-1, nextId-1, -1)
         .map(id => NodeOutput(NodeId.assume(id), 0))
 
-      @nowarn("msg=exhaustive")
+      println(s"Add $numberOfRelays relays between $id ($y) and $output ($targetY): $relayOutputs")
+
       val nodes = relayOutputs
+        .reverse
         .prepended(output)
         .init
         .map(out => Node(NodeType.Relay, Chunk(out)))
 
-      val updatedNodeOutputs = node.outputs.updated(outputIndex, relayOutputs.last)
+      println(s"Nodes: $nodes")
+
+      val updatedNodeOutputs = node.outputs.updated(outputIndex, relayOutputs.head)
       
       updatedGraph = updatedGraph.copy(nodes =
         updatedGraph
