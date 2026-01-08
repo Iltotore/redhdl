@@ -9,12 +9,11 @@ case class Channel(nets: Chunk[Net], tracks: Chunk[Track], firstOuterColumn: May
 
   def getNet(id: NetId): Net = nets(id.value)
 
-  def getNetAt(pos: PinX): Maybe[(NetId, Net)] = Maybe.fromOption(
+  def getNetAt(pos: PinX): Chunk[(NetId, Net)] =
     nets
       .zipWithIndex
-      .collectFirst:
+      .collect:
         case (net, id) if net.start == pos => (NetId.assume(id), net)
-  )
     
 
   //TODO Store TrackId in Net instead of NetId in Track

@@ -75,15 +75,11 @@ object GraphRouter:
         .range(nextIdAfterRelays-1, nextId-1, -1)
         .map(id => NodeOutput(NodeId.assume(id), 0))
 
-      println(s"Add $numberOfRelays relays between $id ($y) and $output ($targetY): $relayOutputs")
-
       val nodes = relayOutputs
         .reverse
         .prepended(output)
         .init
         .map(out => Node(NodeType.Relay, Chunk(out)))
-
-      println(s"Nodes: $nodes")
 
       val updatedNodeOutputs = node.outputs.updated(outputIndex, relayOutputs.head)
       
@@ -183,7 +179,6 @@ object GraphRouter:
       )
     availableTrack match
       case None =>
-        println(s"Assigned $netId to new track ${channel.tracks.size}")
         channel.copy(
           tracks =
             channel
@@ -192,7 +187,6 @@ object GraphRouter:
         )
 
       case Some((track, trackId)) =>
-        println(s"Assigned $netId to track $trackId")
         channel.copy(
           tracks =
             channel
