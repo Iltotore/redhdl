@@ -31,7 +31,7 @@ object Main extends KyoApp:
     )
 
     val headLine = layerFrom
-      .flatMap(id => Chunk.fill(graph.getNode(id).tpe.width)(idToChar(id)))
+      .flatMap(id => Chunk.fill(graph.getNode(id).tpe.sizeX)(idToChar(id)))
       .mkString(" ")
 
     val width = layerSize * 2 - 1
@@ -79,7 +79,7 @@ object Main extends KyoApp:
 
   run:
     direct:
-      val code = Using.resource(Source.fromFile("test/resources/golden/good/circuit/priorityEncoder4to2.red"))(_.mkString)
+      val code = Using.resource(Source.fromFile("test/resources/golden/good/circuit/fullAdder.red"))(_.mkString)
 
       val typeResult = typecheck(code)
       Console.printLine(typeResult).now
@@ -87,14 +87,14 @@ object Main extends KyoApp:
 
       typeResult match
         case Result.Success(components) =>
-          val initialGraph = compileToGraph(Identifier("PriorityEncoder4to2"), components)
+          val initialGraph = compileToGraph(Identifier("FullAdder"), components)
           val initialLayers = GraphRouter.getLayers(initialGraph)
           val (graph, layers) = GraphRouter.addRelays(initialGraph, initialLayers)
           Console.printLine(graph).now
           Console.printLine("=" * 30).now
           Console.printLine(layers).now
           val channels = compileToSchem(graph, layers)
-          val layerSize = channels.map(_.width).max
+          val layerSize = channels.map(_.sizeX).max
           // Console.printLine(channels).now
           Console.printLine(layers.zip(channels).map(showChannel(graph, layerSize, _, _)).mkString("\n")).now
           Console.printLine(layers.last.mkString(" ")).now

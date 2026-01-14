@@ -103,7 +103,7 @@ object GraphRouter:
       var x = PinX(0)
       for
         id <- layer
-        input <- 0 until graph.getNode(id).tpe.width
+        input <- 0 until graph.getNode(id).tpe.sizeX
       do
         positions(NodeOutput(id, input)) = x
         x += 1

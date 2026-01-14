@@ -14,7 +14,7 @@ enum NodeType derives CanEqual:
   case Xor
   case Relay
 
-  def width: Int = this match
+  def sizeX: Int = this match
     case Input(_)  => 1
     case Output(_) => 1
     case True      => 1

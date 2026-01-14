@@ -29,7 +29,9 @@ case class Channel(nets: Chunk[Net], tracks: Chunk[Track], firstOuterColumn: May
 
   def maxPinX: PinX = nets.map(_.right).max
 
-  def width: Int = maxPinX.value + 1
+  def sizeX: Int = maxPinX.value + 1
+
+  def sizeZ: Int = tracks.size
 
   def isOuterColumn(column: PinX): Boolean = firstOuterColumn.exists(column >= _)
 
