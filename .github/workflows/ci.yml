@@ -1,0 +1,75 @@
+name: RedHDL CI
+
+on: [push, pull_request]
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/mill-setup
+      
+      - name: Prepare Mill
+        run: ./millw --no-server __.compile
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mill-build
+          path: out
+          retention-days: 1
+
+  check:
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    continue-on-error: true # Ideally, this would be a temporary measure.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/mill-setup
+      - uses: actions/download-artifact@v5
+        with:
+          name: mill-build
+          path: out
+      
+      - name: Checking
+        run: ./millw checkFormat
+
+  test:
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/mill-setup
+      - uses: actions/download-artifact@v5
+        with:
+          name: mill-build
+          path: out
+      
+      - name: Testing
+        run: ./millw test
+
+  package:
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/mill-setup
+      - uses: actions/download-artifact@v5
+        with:
+          name: mill-build
+          path: out
+
+      - name: Packaging
+        run: ./millw assembly
+
+        # --- Artifact uploading ---
+      
+      - uses: tj-actions/branch-names@v9
+        id: branch-name
+      - name: Format branch name
+        id: format-branch-name
+        run: echo "formatted_branch=$(echo ${{ steps.branch-name.outputs.current_branch }} | tr -s '/' '-')" >> $GITHUB_OUTPUT
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: redhdl-artifacts-${{ steps.format-branch-name.outputs.formatted_branch }}-${{ github.run_number }}
+          path: 'out/assembly.dest/*.jar'

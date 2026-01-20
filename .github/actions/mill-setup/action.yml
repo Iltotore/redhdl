@@ -1,0 +1,19 @@
+name: Setup Java & Mill Cache
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 21
+
+    - name: Cache Mill & Coursier directories
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/mill
+          ~/.cache/coursier
+        key: ${{ runner.os }}-mill-${{ hashFiles('build.mill') }}
+        restore-keys: |
+          ${{ runner.os }}-mill-
