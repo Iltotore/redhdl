@@ -19,16 +19,25 @@ case class SchematicContext(schematics: Map[GateType, Clipboard]):
 
 object SchematicContext:
 
-  def load(types: Chunk[GateType]): SchematicContext < Sync =
-    val schematics = types.map(tpe =>
-        val inputSupplier: Supplier[InputStream] = () => getClass.getResourceAsStream(s"/gates/${tpe.resourceName}.schem")
-        val format = ClipboardFormats.findByInputStream(inputSupplier)
-        Using.resource(inputSupplier.get())( input =>
-          (tpe, format.getReader(input).read())
+  def load(types: Chunk[GateType]): SchematicContext < (Abort[SchematicFailure] & Sync) =
+    Kyo.foreach(types)(tpe =>
+      direct:
+        val resourcePath = s"/gates/${tpe.resourceName}.schem"
+
+        // Using a Supplier to allow multiple reads for format detection and actual reading
+        val inputSupplier: Supplier[InputStream] = () => getClass.getResourceAsStream(resourcePath)
+        val input = Maybe.fromOption(Option(inputSupplier.get()))
+        if input.isEmpty then Abort.fail(SchematicFailure.MissingSchematic(tpe)).now
+
+        // Detect the schematic format
+        val format = Maybe.fromOption(Option(ClipboardFormats.findByInputStream(inputSupplier)))
+        if format.isEmpty then Abort.fail(SchematicFailure.UnsupportedSchematicFormat(resourcePath)).now
+
+        // Read the schematic using the detected format
+        Using.resource(input.get)( input =>
+          (tpe, format.get.getReader(input).read())
         )
-    )
-    
-    SchematicContext(schematics.toMap)
+    ).map(pairs => SchematicContext(pairs.toMap))
 
   def getSchematic(tpe: GateType): Clipboard < SchematicGeneration =
     Env.use(ctx =>

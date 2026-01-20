@@ -22,6 +22,9 @@ import io.github.iltotore.redhdl.graph.NetId
 import scala.util.Using
 import com.sk89q.worldedit.WorldEdit
 import com.sk89q.worldedit.session.ClipboardHolder
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
+import java.nio.file.Path as JPath
+import java.nio.file.Files
 
 object SchematicGenerator:
 
@@ -157,3 +160,21 @@ object SchematicGenerator:
     .now
 
     clipboard
+
+  def saveSchematic(clipboard: Clipboard, path: JPath): Unit < (SchematicGeneration & Sync) =
+    // Find format by file extension
+    val format = Maybe.fromOption(Option(ClipboardFormats.findByFile(path.toFile)))
+    if format.isEmpty then Abort.fail(SchematicFailure.UnsupportedSchematicFormat(path.toString))
+    // Save schematic
+    else
+      Using.resource(Files.newOutputStream(path))(output =>
+        format.get.getWriter(output).write(clipboard)
+      )
+
+  def generateAndSaveStructure(
+    graph: Graph,
+    layers: Chunk[Chunk[NodeId]],
+    channels: Chunk[Channel],
+    path: JPath
+  ): Unit < (SchematicGeneration & Sync) =
+    generateStructure(graph, layers, channels).map(saveSchematic(_, path))

@@ -10,6 +10,12 @@ import io.github.iltotore.redhdl.graph.GraphRouter
 import io.github.iltotore.redhdl.graph.NodeId
 import io.github.iltotore.redhdl.graph.NetId
 import io.github.iltotore.redhdl.graph.Net
+import io.github.iltotore.redhdl.minecraft.GateType
+import io.github.iltotore.redhdl.minecraft.SchematicContext
+import io.github.iltotore.redhdl.minecraft.SchematicGeneration
+import io.github.iltotore.redhdl.minecraft.SchematicGenerator
+import java.nio.file.Files
+import java.nio.file.Paths
 
 object Main extends KyoApp:
 
@@ -98,5 +104,21 @@ object Main extends KyoApp:
           // Console.printLine(channels).now
           Console.printLine(layers.zip(channels).map(showChannel(graph, layerSize, _, _)).mkString("\n")).now
           Console.printLine(layers.last.mkString(" ")).now
+
+          // Generate and save schematic
+
+          val outputPath = Paths.get("out", "redhdl.schem")
+          Files.createDirectories(outputPath.getParent)
+          
+          val contextResult = Abort.run(SchematicContext.load(GateType.values)).now
+          contextResult match
+            case Result.Success(context) =>
+              SchematicGeneration.run(context)(
+                SchematicGenerator.generateAndSaveStructure(graph, layers, channels, outputPath)
+              ).now match
+                case Result.Success(_) => Console.printLine(s"Schematic saved to ${outputPath}").now
+                case Result.Failure(err) => Console.printLine(err).now
+            case Result.Failure(err) => Console.printLine(err).now
+
         case _ => Console.printLine(typeResult).now
     
