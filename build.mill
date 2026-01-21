@@ -5,14 +5,14 @@ object `package` extends ScalaModule with ScalafmtModule:
 
   def scalaVersion = "3.7.3"
 
-  val kyoVersion = "main-bfd2dedb6b-1"
+  val kyoVersion = "v1.0-RC1-fix2"
 
   def repositories = super.repositories() ++ Seq("https://maven.enginehub.org/repo/", "https://jitpack.io")
 
   def mvnDeps = Seq(
-    mvn"com.github.JordanViknar.kyo::kyo-core:$kyoVersion",
-    mvn"com.github.JordanViknar.kyo::kyo-direct:$kyoVersion",
-    mvn"com.github.JordanViknar.kyo::kyo-parse:$kyoVersion",
+    mvn"com.github.iltotore.kyo::kyo-core:$kyoVersion",
+    mvn"com.github.iltotore.kyo::kyo-direct:$kyoVersion",
+    mvn"com.github.iltotore.kyo::kyo-parse:$kyoVersion",
     mvn"io.github.iltotore::iron:3.2.0",
     mvn"com.sk89q.worldedit:worldedit-core:7.3.9"
   )
