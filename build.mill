@@ -7,14 +7,18 @@ object `package` extends ScalaModule with ScalafmtModule:
   //TODO Host kyo-parse on Github Package
   val kyoVersion = "0.0.0+2686-ef8c8fe0-SNAPSHOT"
 
-  def repositories = Seq("https://maven.enginehub.org/repo/")
+  def repositories = Seq(
+    "https://maven.enginehub.org/repo/",
+    "https://jitpack.io/"
+  )
 
   def mvnDeps = Seq(
     mvn"io.getkyo::kyo-core:$kyoVersion",
     mvn"io.getkyo::kyo-direct:$kyoVersion",
     mvn"io.getkyo::kyo-parse:$kyoVersion",
     mvn"io.github.iltotore::iron:3.2.0",
-    mvn"com.sk89q.worldedit:worldedit-core:7.3.9"
+    mvn"com.sk89q.worldedit:worldedit-core:7.3.9",
+    mvn"com.github.Iltotore:NBT:6.1.1"
   )
 
   def scalacOptions = Seq(
