@@ -141,9 +141,15 @@ object SchematicGenerator:
     )
 
   def generateStructure(graph: Graph, layers: Chunk[Chunk[NodeId]], channels: Chunk[Channel]): Clipboard < SchematicGeneration = direct:
+    println("TEST")
+    
     val clipboard = BlockArrayClipboard(getNeededRegion(graph, layers, channels).now)
 
+    println(s"Region: ${clipboard.getRegion}")
+
     putLayer(layers(0).map(id => graph.getNode(id).tpe), clipboard, BlockVector3.at(0, 0, 0)).now
+
+    println(s"Layer 0")
 
     Loop(layers.tail, channels, layerSizeZ):
       case (layer +: remainingLayers, channel +: remainingChannels, z) =>
@@ -162,13 +168,12 @@ object SchematicGenerator:
     clipboard
 
   def saveSchematic(clipboard: Clipboard, path: JPath): Unit < (SchematicGeneration & Sync) =
-    // Find format by file extension
-    val format = Maybe.fromOption(Option(ClipboardFormats.findByFile(path.toFile)))
-    if format.isEmpty then Abort.fail(SchematicFailure.UnsupportedSchematicFormat(path.toString))
-    // Save schematic
+    val format = ClipboardFormats.findByFile(path.toFile)
+    
+    if format == null then Abort.fail(SchematicFailure.InvalidSchematic(path.toString, ""))
     else
       Using.resource(Files.newOutputStream(path))(output =>
-        format.get.getWriter(output).write(clipboard)
+        format.getWriter(output).write(clipboard)
       )
 
   def generateAndSaveStructure(
@@ -177,4 +182,10 @@ object SchematicGenerator:
     channels: Chunk[Channel],
     path: JPath
   ): Unit < (SchematicGeneration & Sync) =
-    generateStructure(graph, layers, channels).map(saveSchematic(_, path))
+    println("hey")
+    // generateStructure(graph, layers, channels)
+    //   .map(r => {
+    //     println("SAVING")
+    //     r
+    //   })
+    //   .map(saveSchematic(_, path))

@@ -16,6 +16,13 @@ import io.github.iltotore.redhdl.minecraft.SchematicGeneration
 import io.github.iltotore.redhdl.minecraft.SchematicGenerator
 import java.nio.file.Files
 import java.nio.file.Paths
+import io.github.ensgijs.nbt.io.BinaryNbtHelpers
+import io.github.ensgijs.nbt.io.CompressionType
+import io.github.ensgijs.nbt.tag.CompoundTag
+import io.github.iltotore.redhdl.minecraft.Structure
+import io.github.iltotore.redhdl.minecraft.BlockPos
+import io.github.iltotore.redhdl.minecraft.Block
+import io.github.ensgijs.nbt.tag.IntTag
 
 object Main extends KyoApp:
 
@@ -85,7 +92,24 @@ object Main extends KyoApp:
 
   run:
     direct:
-      val code = Using.resource(Source.fromFile("test/resources/golden/good/circuit/fullAdder.red"))(_.mkString)
+      val nbt = BinaryNbtHelpers.read("resources/gates/false.schem", CompressionType.GZIP).getTagAutoCast[CompoundTag]
+
+      val result = Abort.runPartialOrThrow(Structure.loadSponge("resources/gates/false.schem", nbt)).now
+
+      Console.printLine(result).now
+
+      val structure = Structure.empty(BlockPos(10, 10, 10))
+        .withLineX(BlockPos(0, 0, 0), 9, Block("minecraft:red_wool"))
+        .withLineX(BlockPos(0, 0, 9), 9, Block("minecraft:blue_wool"))
+        .withLineZ(BlockPos(0, 0, 0), 9, Block("minecraft:lime_wool"))
+        .withLineZ(BlockPos(9, 0, 0), 9, Block("minecraft:yellow_wool"))
+        .withBlock(BlockPos(4, 0, 4), Block("minecraft:white_wool"))
+        .withBlock(BlockPos(4, 1, 4), Block.Sign("Hello", "World"))
+        .withStructure(BlockPos(4, 3, 4), result.getOrElse(???))
+
+      BinaryNbtHelpers.write(Structure.saveSponge(structure), "/home/fromentin/.var/app/org.prismlauncher.PrismLauncher/data/PrismLauncher/instances/Fabulously Optimized/minecraft/config/worldedit/schematics/custom.schem", CompressionType.GZIP)
+
+      /*val code = Using.resource(Source.fromFile("test/resources/golden/good/circuit/fullAdder.red"))(_.mkString)
 
       val typeResult = typecheck(code)
       Console.printLine(typeResult).now
@@ -111,8 +135,10 @@ object Main extends KyoApp:
           Files.createDirectories(outputPath.getParent)
           
           val contextResult = Abort.run(SchematicContext.load(GateType.values)).now
+
           contextResult match
             case Result.Success(context) =>
+
               SchematicGeneration.run(context)(
                 SchematicGenerator.generateAndSaveStructure(graph, layers, channels, outputPath)
               ).now match
@@ -120,5 +146,5 @@ object Main extends KyoApp:
                 case Result.Failure(err) => Console.printLine(err).now
             case Result.Failure(err) => Console.printLine(err).now
 
-        case _ => Console.printLine(typeResult).now
+        case _ => Console.printLine(typeResult).now*/
     

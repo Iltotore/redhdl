@@ -26,17 +26,18 @@ object SchematicContext:
 
         // Using a Supplier to allow multiple reads for format detection and actual reading
         val inputSupplier: Supplier[InputStream] = () => getClass.getResourceAsStream(resourcePath)
-        val input = Maybe.fromOption(Option(inputSupplier.get()))
-        if input.isEmpty then Abort.fail(SchematicFailure.MissingSchematic(tpe)).now
+        val input = inputSupplier.get()
+        if input == null then Abort.fail(SchematicFailure.MissingSchematic(tpe)).now
 
         // Detect the schematic format
-        val format = Maybe.fromOption(Option(ClipboardFormats.findByInputStream(inputSupplier)))
-        if format.isEmpty then Abort.fail(SchematicFailure.UnsupportedSchematicFormat(resourcePath)).now
-
-        // Read the schematic using the detected format
-        Using.resource(input.get)( input =>
-          (tpe, format.get.getReader(input).read())
-        )
+        val format = ClipboardFormats.findByInputStream(inputSupplier)
+        
+        if format == null then Abort.fail(SchematicFailure.InvalidSchematic(resourcePath, "")).now
+        else
+          // Read the schematic using the detected format
+          Using.resource(input)( input =>
+            (tpe, format.getReader(input).read())
+          )
     ).map(pairs => SchematicContext(pairs.toMap))
 
   def getSchematic(tpe: GateType): Clipboard < SchematicGeneration =
