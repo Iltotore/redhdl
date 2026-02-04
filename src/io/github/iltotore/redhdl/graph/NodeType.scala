@@ -27,6 +27,9 @@ enum NodeType derives CanEqual:
     case Xor       => 2
     case Relay     => 1
 
+  def isInput: Boolean = this.isInstanceOf[Input]
+  def isOutput: Boolean = this.isInstanceOf[Output]
+
   def toGateType: GateType = this match
     case Input(_) => GateType.Input
     case Output(_) => GateType.Output

@@ -92,7 +92,7 @@ object Main extends KyoApp:
 
   run:
     direct:
-      val code = Using.resource(Source.fromFile("test/resources/golden/good/circuit/fullAdder.red"))(_.mkString)
+      val code = Using.resource(Source.fromFile("test/resources/golden/good/circuit/priorityEncoder4to2.red"))(_.mkString)
 
       val typeResult = typecheck(code)
       Console.printLine(typeResult).now
@@ -100,7 +100,7 @@ object Main extends KyoApp:
 
       typeResult match
         case Result.Success(components) =>
-          val initialGraph = compileToGraph(Identifier("FullAdder"), components)
+          val initialGraph = compileToGraph(Identifier("PriorityEncoder4to2"), components)
           val initialLayers = GraphRouter.getLayers(initialGraph)
           val (graph, layers) = GraphRouter.addRelays(initialGraph, initialLayers)
           Console.printLine(graph).now
@@ -114,7 +114,7 @@ object Main extends KyoApp:
 
           // Generate and save schematic
 
-          val outputPath = "/home/fromentin/.var/app/org.prismlauncher.PrismLauncher/data/PrismLauncher/instances/Fabulously Optimized/minecraft/config/worldedit/schematics/redhdl.schem"
+          val outputPath = "/home/fromentin/.local/share/PrismLauncher/instances/Fabulously Optimized/.minecraft/config/worldedit/schematics/redhdl.schem"
           
           val contextResult = Abort.run(SchematicContext.load(GateType.values)).now
 
