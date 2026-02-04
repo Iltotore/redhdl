@@ -2,6 +2,7 @@ package io.github.iltotore.redhdl.graph
 
 import kyo.Chunk
 import kyo.Maybe
+import kyo.Absent
 import kyo.Present
 import scala.math.Ordering.Implicits.infixOrderingOps
 

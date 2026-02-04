@@ -1,30 +1,18 @@
 package io.github.iltotore.redhdl.minecraft
 
-import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard
-import com.sk89q.worldedit.extent.clipboard.Clipboard
-import com.sk89q.worldedit.function.operation.Operations
-import com.sk89q.worldedit.math.BlockVector3
-import com.sk89q.worldedit.regions.CuboidRegion
-import com.sk89q.worldedit.regions.Region
-import com.sk89q.worldedit.world.block.BlockTypes
 import io.github.iltotore.redhdl.graph.Channel
 import io.github.iltotore.redhdl.graph.Graph
 import io.github.iltotore.redhdl.graph.NodeId
 import io.github.iltotore.redhdl.graph.NodeType
 import kyo.*
-import org.enginehub.linbus.tree.LinCompoundTag
-import org.enginehub.linbus.tree.LinListTag
-import org.enginehub.linbus.tree.LinStringTag
-import org.enginehub.linbus.tree.LinTagType
-import com.sk89q.worldedit.world.block.BaseBlock
 import io.github.iltotore.redhdl.graph.Net
 import io.github.iltotore.redhdl.graph.NetId
 import scala.util.Using
-import com.sk89q.worldedit.WorldEdit
-import com.sk89q.worldedit.session.ClipboardHolder
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
 import java.nio.file.Path as JPath
 import java.nio.file.Files
+import io.github.ensgijs.nbt.io.BinaryNbtHelpers
+import io.github.ensgijs.nbt.io.CompressionType
+import io.github.iltotore.redhdl.graph.Channel
 
 object SchematicGenerator:
 
@@ -33,159 +21,144 @@ object SchematicGenerator:
   private val columnSpacing: Int = 2
   private val trackSpacing: Int = 4
 
-  def getNeededRegion(graph: Graph, layers: Chunk[Chunk[NodeId]], channels: Chunk[Channel]): Region < SchematicGeneration = direct:
-    val sizeX = channels.map(_.sizeX).max * 2
+  def getChannelSize(channel: Channel): Int =
+    channel.tracks.size * trackSpacing + 4
+
+  def getNeededRegion(graph: Graph, layers: Chunk[Chunk[NodeId]], channels: Chunk[Channel]): BlockPos < SchematicGeneration = direct:
+    val sizeX = channels.map(_.sizeX).max * columnSpacing
     val sizeY = 4
-    val sizeZ = channels.map(_.sizeZ).sum * +(layers.size - 1) * layerSizeZ + 2
+    val sizeZ = channels.map(getChannelSize).sum + layers.size * layerSizeZ
 
-    CuboidRegion(BlockVector3(0, 0, 0), BlockVector3(sizeX, sizeY, sizeZ))
+    BlockPos(sizeX, sizeY, sizeZ)
 
-  def pasteSchematic(clipboard: Clipboard, to: Clipboard, at: BlockVector3): Unit =
-    val operation = ClipboardHolder(clipboard)
-      .createPaste(to)
-      .to(at)
-      .build()
-
-    Operations.complete(operation)
-
-  def pasteGateSchematic(tpe: GateType, to: Clipboard, at: BlockVector3): Unit < SchematicGeneration =
+  def pasteGateSchematic(tpe: GateType, to: Structure, at: BlockPos): Structure < SchematicGeneration =
     SchematicContext
       .getSchematic(tpe)
-      .map(pasteSchematic(_, to, at))
+      .map(to.withStructure(at, _))
 
-  def createSign(title: String): BaseBlock =
-    val messages = LinListTag.of(
-      LinTagType.stringTag,
-      java.util.Arrays.asList(
-        LinStringTag.of(s"""{"text":"$title"}"""),
-        LinStringTag.of("""{"text":""}"""),
-        LinStringTag.of("""{"text":""}"""),
-        LinStringTag.of("""{"text":""}""")
-      )
-    )
-
-    val frontText = LinCompoundTag.of(java.util.Map.of(
-      "messages",
-      messages
-    ))
-
-    val nbt = LinCompoundTag.of(java.util.Map.of("front_text", frontText))
-    BlockTypes.SIGN.getDefaultState().toBaseBlock(nbt)
-
-  def putGate(tpe: NodeType, clipboard: Clipboard, at: BlockVector3): Unit < SchematicGeneration = direct:
+  def putGate(tpe: NodeType, structure: Structure, at: BlockPos): Structure < SchematicGeneration = direct:
+    println(s"Put gate $tpe at $at")
     tpe match
       case NodeType.Input(name) =>
-        pasteGateSchematic(tpe.toGateType, clipboard, at).now
-        clipboard.setBlock(at.add(0, 1, 0), createSign(name.value))
+        pasteGateSchematic(tpe.toGateType, structure.withBlock(at, Block("minecraft:cyan_wool")), at)
+          .now
+          .withBlock(at + (0, 2, 3), Block.Sign(name.value))
       case NodeType.Output(name) =>
-        pasteGateSchematic(tpe.toGateType, clipboard, at).now
-        clipboard.setBlock(at.add(0, 1, 0), createSign(name.value))
-      case _ => pasteGateSchematic(tpe.toGateType, clipboard, at).now
+        pasteGateSchematic(tpe.toGateType, structure.withBlock(at, Block("minecraft:blue_wool")), at)
+          .now
+          .withBlock(at + (0, 2, 0), Block.Sign(name.value))
+      case _ => pasteGateSchematic(tpe.toGateType, structure.withBlock(at, Block("minecraft:blue_wool")), at).now
 
-  def putNet(channel: Channel, id: NetId, net: Net, clipboard: Clipboard, at: BlockVector3): Unit < SchematicGeneration = direct:
+  def putNet(channel: Channel, id: NetId, net: Net, structure: Structure, at: BlockPos, startZ: Int): Structure < SchematicGeneration = direct:
+    println(s"Put net $id at $at")
+    
     val trackId = channel.getNetTrack(id).get
-    val trackZ = trackId.value * trackSpacing + 1
-    val endZ = channel.tracks.size * (trackSpacing + 1) + 1
+    val trackZ = trackId.value * trackSpacing + 3
+    val endZ = getChannelSize(channel)
     val startX = net.start.value * columnSpacing
     val endX = net.end.value * columnSpacing
 
-    for z <- 0 until trackZ - 2 do
-      clipboard.setBlock(at.add(startX, 0, z), BlockTypes.WHITE_WOOL.getDefaultState().toBaseBlock())
-      clipboard.setBlock(at.add(startX, 1, z), BlockTypes.REDSTONE_WIRE.getDefaultState().toBaseBlock())
+    val withoutLineAfterBridge =
+      structure
+        .withBlock(at, Block("minecraft:red_wool"))
+        // Line before bridge
+        .withLineZ(at + (startX, 0, startZ), at.z + trackZ - 3, Block("minecraft:pink_wool"))
+        .withLineZ(at + (startX, 1, startZ), at.z + trackZ - 3, Block("minecraft:redstone_wire"))
+        // Bridge
+        .withLineX(at + (startX, 2, trackZ), at.x + endX, Block("minecraft:lime_wool"))
+        .withLineX(at + (startX, 3, trackZ), at.x + endX, Block("minecraft:redstone_wire"))
+        // Bridge start repeater
+        .withBlock(at + (startX, 0, trackZ - 2), Block("minecraft:orange_wool"))
+        .withBlock(at + (startX, 1, trackZ - 2), Block("minecraft:repeater"), overrideBlock = true)
+        // Bridge end repeater
+        .withBlock(at + (endX, 0, trackZ + 2), Block("minecraft:green_wool"))
+        .withBlock(at + (endX, 1, trackZ + 2), Block("minecraft:repeater"), overrideBlock = true)
+        // Bridge start
+        .withBlock(at + (startX, 1, trackZ - 1), Block("minecraft:magenta_wool"), overrideBlock = true)
+        .withBlock(at + (startX, 2, trackZ - 1), Block("minecraft:redstone_wire"))
+        // and end
+        .withBlock(at + (endX, 1, trackZ + 1), Block("minecraft:black_wool"), overrideBlock = true)
+        .withBlock(at + (endX, 2, trackZ + 1), Block("minecraft:redstone_wire"))
 
-    for z <- trackZ + 3 until endZ do
-      clipboard.setBlock(at.add(endX, 0, z), BlockTypes.WHITE_WOOL.getDefaultState().toBaseBlock())
-      clipboard.setBlock(at.add(endX, 1, z), BlockTypes.REDSTONE_WIRE.getDefaultState().toBaseBlock())
+    val withLineAfterBridge =
+      if channel.isOuterColumn(net.start) then withoutLineAfterBridge
+      else
+        withoutLineAfterBridge
+          .withLineZ(at + (endX, 0, trackZ + 3), at.z + endZ, Block("minecraft:purple_wool"))
+          .withLineZ(at + (endX, 1, trackZ + 3), at.z + endZ, Block("minecraft:redstone_wire"))
 
-    // Bridge start repeater
-    clipboard.setBlock(at.add(startX, 0, trackZ - 2), BlockTypes.WHITE_WOOL.getDefaultState().toBaseBlock())
-    clipboard.setBlock(at.add(startX, 1, trackZ - 2), BlockTypes.REPEATER.getDefaultState().toBaseBlock())
-    // Bridge end repeater
-    clipboard.setBlock(at.add(endX, 0, trackZ + 2), BlockTypes.WHITE_WOOL.getDefaultState().toBaseBlock())
-    clipboard.setBlock(at.add(endX, 1, trackZ + 2), BlockTypes.REPEATER.getDefaultState().toBaseBlock())
-    // Bridge start
-    clipboard.setBlock(at.add(startX, 1, trackZ - 1), BlockTypes.WHITE_WOOL.getDefaultState().toBaseBlock())
-    clipboard.setBlock(at.add(startX, 2, trackZ - 1), BlockTypes.REDSTONE_WIRE.getDefaultState().toBaseBlock())
-    // and end
-    clipboard.setBlock(at.add(endX, 1, trackZ + 1), BlockTypes.WHITE_WOOL.getDefaultState().toBaseBlock())
-    clipboard.setBlock(at.add(endX, 2, trackZ + 1), BlockTypes.REDSTONE_WIRE.getDefaultState().toBaseBlock())
+    net.outerNet match
+      case Absent => withLineAfterBridge
+      case Present(outerId) =>
+        val outerNet = channel.getNet(outerId)
+        putNet(channel, outerId, outerNet, withLineAfterBridge, at, trackZ + 3).now
 
-    // The bridge itself
-    for x <- startX until endX do
-      clipboard.setBlock(at.add(x, 1, trackZ), BlockTypes.WHITE_WOOL.getDefaultState().toBaseBlock())
-      clipboard.setBlock(at.add(x, 2, trackZ), BlockTypes.REDSTONE_WIRE.getDefaultState().toBaseBlock())    
-
-  def putLayer(layer: Chunk[NodeType], clipboard: Clipboard, at: BlockVector3): Unit < SchematicGeneration = direct:
+  def putLayer(layer: Chunk[NodeType], structure: Structure, at: BlockPos): Structure < SchematicGeneration = direct:
     val layerSize = layer.map(_.sizeX).sum
-    
-    for x <- 0 to layerSize do
-      clipboard.setBlock(at.add(x * columnSpacing, 0, 0), BlockTypes.WHITE_WOOL.getDefaultState().toBaseBlock())
-      clipboard.setBlock(at.add(x * columnSpacing, 1, 0), BlockTypes.REPEATER.getDefaultState().toBaseBlock())
-    
-    for x <- 0 to layerSize do
-      clipboard.setBlock(at.add(x * columnSpacing, 0, gateSizeZ + 1), BlockTypes.WHITE_WOOL.getDefaultState().toBaseBlock())
-      clipboard.setBlock(at.add(x * columnSpacing, 1, gateSizeZ + 1), BlockTypes.REPEATER.getDefaultState().toBaseBlock())
+    println(s"Layer at: $at, size: $layerSize")
 
-    Loop(layer, 0):
-      case (nodeType +: tail, x) =>
+    Loop(structure, layer, 0):
+      case (struct, nodeType +: tail, x) =>
         val sizeX = nodeType.sizeX
-        putGate(nodeType, clipboard, at.add(x * columnSpacing, 0, 1))
-          .andThen(Loop.continue(tail, x + sizeX))
+
+        val withIO = Range(0, sizeX).foldLeft(struct)((s, pin) =>
+          val realX = (x + pin) * columnSpacing
+          println(s"Layer place at X=$x (true pos: $realX)")
+
+          s
+            .withBlock(at + (realX, 0, 0), Block("minecraft:yellow_wool"))  
+            .withBlock(at + (realX, 1, 0), Block("minecraft:repeater"))  
+        )
+        .withBlock(at + (x * columnSpacing, 0, gateSizeZ + 1), Block("minecraft:yellow_wool"))
+        .withBlock(at + (x * columnSpacing, 1, gateSizeZ + 1), Block("minecraft:repeater"))
+
+        putGate(nodeType, withIO, at + (x * columnSpacing, 0, 1))
+          .map(Loop.continue(_, tail, x + sizeX))
     
-      case (_, x) => Loop.done(())
+      case (struct, _, _) => Loop.done(struct)
     .now
 
-  def putChannel(channel: Channel, clipboard: Clipboard, at: BlockVector3): Unit < SchematicGeneration =
-    Kyo.foreachDiscard(channel.nets.zipWithIndex)((net, id) =>
-      putNet(channel, NetId.assume(id), net, clipboard, at)
-    )
-
-  def generateStructure(graph: Graph, layers: Chunk[Chunk[NodeId]], channels: Chunk[Channel]): Clipboard < SchematicGeneration = direct:
+  def putChannel(channel: Channel, structure: Structure, at: BlockPos): Structure < SchematicGeneration =
+    Kyo.foldLeft(channel.nets.zipWithIndex)(structure):
+      case (struct, (net, id)) =>
+        if channel.isOuterColumn(net.start) then struct
+        else putNet(channel, NetId.assume(id), net, struct, at, 0)
+    
+  def generateStructure(graph: Graph, layers: Chunk[Chunk[NodeId]], channels: Chunk[Channel]): Structure < SchematicGeneration = direct:
     println("TEST")
     
-    val clipboard = BlockArrayClipboard(getNeededRegion(graph, layers, channels).now)
+    val emptyStructure = Structure.empty(getNeededRegion(graph, layers, channels).now)
+    val withFirstLayer = putLayer(layers(0).map(id => graph.getNode(id).tpe), emptyStructure, BlockPos(0, 0, 0)).now
 
-    println(s"Region: ${clipboard.getRegion}")
+    println(s"Layer 0, sizes: ${layers.tail.size}, ${channels.size}")
 
-    putLayer(layers(0).map(id => graph.getNode(id).tpe), clipboard, BlockVector3.at(0, 0, 0)).now
-
-    println(s"Layer 0")
-
-    Loop(layers.tail, channels, layerSizeZ):
-      case (layer +: remainingLayers, channel +: remainingChannels, z) =>
+    Loop(withFirstLayer, layers.tail, channels, layerSizeZ):
+      case (struct, layer +: remainingLayers, channel +: remainingChannels, z) =>
         direct:
-          putLayer(layer.map(id => graph.getNode(id).tpe), clipboard, BlockVector3.at(0, 0, z)).now
-          putChannel(channel, clipboard, BlockVector3.at(0, 0, z + layerSizeZ)).now
-          Loop.continue(
+          val layerStart = z + getChannelSize(channel) + 1
+
+          println(s"Channel size Z: ${getChannelSize(channel)}")
+
+          val withChannel = putChannel(channel, struct, BlockPos(0, 0, z)).now
+          val withChannelAndLayer = putLayer(layer.map(id => graph.getNode(id).tpe), withChannel, BlockPos(0, 0, layerStart)).now
+          Loop.continue[Structure, Chunk[Chunk[NodeId.T]], Chunk[Channel], Int, Structure](
+            withChannelAndLayer,
             remainingLayers,
             remainingChannels,
-            z + layerSizeZ + channel.tracks.size * (trackSpacing + 1) + 1
+            layerStart + layerSizeZ
           )
 
-      case _ => Loop.done(())
+      case (struct, _, _, _) => Loop.done(struct)
     .now
 
-    clipboard
-
-  def saveSchematic(clipboard: Clipboard, path: JPath): Unit < (SchematicGeneration & Sync) =
-    val format = ClipboardFormats.findByFile(path.toFile)
-    
-    if format == null then Abort.fail(SchematicFailure.InvalidSchematic(path.toString, ""))
-    else
-      Using.resource(Files.newOutputStream(path))(output =>
-        format.getWriter(output).write(clipboard)
-      )
+  def saveSchematic(structure: Structure, path: String): Unit < (SchematicGeneration & Sync) =
+    BinaryNbtHelpers.write(Structure.saveSponge(structure), path, CompressionType.GZIP): Unit
 
   def generateAndSaveStructure(
     graph: Graph,
     layers: Chunk[Chunk[NodeId]],
     channels: Chunk[Channel],
-    path: JPath
+    path: String
   ): Unit < (SchematicGeneration & Sync) =
-    println("hey")
-    // generateStructure(graph, layers, channels)
-    //   .map(r => {
-    //     println("SAVING")
-    //     r
-    //   })
-    //   .map(saveSchematic(_, path))
+    generateStructure(graph, layers, channels)
+      .map(saveSchematic(_, path))

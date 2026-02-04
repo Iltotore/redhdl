@@ -11,7 +11,7 @@ import io.github.ensgijs.nbt.tag.StringTag
 import io.github.ensgijs.nbt.tag.ByteTag
 import io.github.ensgijs.nbt.tag.ListTag
 
-case class Structure(dimensions: BlockPos, blocks: Chunk[Block]):
+case class Structure(dimensions: BlockPos, var blocks: Chunk[Block]):
 
   def width: Int = dimensions.x
   def height: Int = dimensions.y
@@ -29,19 +29,33 @@ case class Structure(dimensions: BlockPos, blocks: Chunk[Block]):
 
   def apply(position: BlockPos): Block = blocks(positionToIndex(position))
 
-  def withBlock(position: BlockPos, block: Block): Structure =
-    this.copy(blocks = blocks.updated(positionToIndex(position), block))
+  // Returns true if the given position is inside the structure bounds
+  private def inBounds(pos: BlockPos): Boolean =
+    pos.x >= 0 && pos.y >= 0 && pos.z >= 0 &&
+    pos.x < width && pos.y < height && pos.z < length
 
-  def withLineX(positionA: BlockPos, to: Int, block: Block): Structure =
+  def withBlock(position: BlockPos, block: Block, overrideBlock: Boolean = false): Structure =
+    if !inBounds(position) then
+      println(s"Warning: [${block.id}] out of bounds at ($position) (dims=$dimensions)")
+      this
+    else
+      val existing = this(position)
+      if !overrideBlock && existing.id != "minecraft:air" && existing.id != block.id then
+        println(s"Warning: [${block.id}] overwriting [${existing.id}] at ($position)")
+        this
+      else
+        this.copy(blocks = blocks.updated(positionToIndex(position), block))
+
+  def withLineX(positionA: BlockPos, to: Int, block: Block, overrideBlock: Boolean = false): Structure =
     val step = if to >= positionA.x then 1 else -1
     Range.inclusive(positionA.x, to, step).foldLeft(this)((structure, x) =>
-      structure.withBlock(BlockPos(x, positionA.y, positionA.z), block)
+      structure.withBlock(BlockPos(x, positionA.y, positionA.z), block, overrideBlock)
     )
   
-  def withLineZ(positionA: BlockPos, to: Int, block: Block): Structure =
+  def withLineZ(positionA: BlockPos, to: Int, block: Block, overrideBlock: Boolean = false): Structure =
     val step = if to >= positionA.z then 1 else -1
     Range.inclusive(positionA.z, to, step).foldLeft(this)((structure, z) =>
-      structure.withBlock(BlockPos(positionA.x, positionA.y, z), block)
+      structure.withBlock(BlockPos(positionA.x, positionA.y, z), block, overrideBlock)
     )
 
   def withData(position: BlockPos, data: CompoundTag): Structure =
