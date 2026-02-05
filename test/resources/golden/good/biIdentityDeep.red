@@ -31,7 +31,7 @@ begin
   out = id1.out
 end
 
-component BiIdentity
+component BiIdentityDeep
 input
   in1: Boolean,
   in2: Boolean

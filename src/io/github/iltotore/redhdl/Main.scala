@@ -92,7 +92,7 @@ object Main extends KyoApp:
 
   run:
     direct:
-      val code = Using.resource(Source.fromFile("test/resources/golden/good/circuit/priorityEncoder4to2.red"))(_.mkString)
+      val code = Using.resource(Source.fromFile("test/resources/golden/good/biIdentityDeep.red"))(_.mkString)
 
       val typeResult = typecheck(code)
       Console.printLine(typeResult).now
@@ -100,7 +100,7 @@ object Main extends KyoApp:
 
       typeResult match
         case Result.Success(components) =>
-          val initialGraph = compileToGraph(Identifier("PriorityEncoder4to2"), components)
+          val initialGraph = compileToGraph(Identifier("BiIdentityDeep"), components)
           val initialLayers = GraphRouter.getLayers(initialGraph)
           val (graph, layers) = GraphRouter.addRelays(initialGraph, initialLayers)
           Console.printLine(graph).now
