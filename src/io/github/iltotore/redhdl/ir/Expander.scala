@@ -4,10 +4,10 @@ import io.github.iltotore.redhdl.ast.Expr
 import io.github.iltotore.redhdl.ast.Identifier
 import io.github.iltotore.redhdl.ast.PortIdentifier
 import io.github.iltotore.redhdl.ast.Type
-import io.github.iltotore.redhdl.typer.ComponentInfo
-import kyo.*
 import io.github.iltotore.redhdl.ir.ExpandedComponent
 import io.github.iltotore.redhdl.ir.Expansion
+import io.github.iltotore.redhdl.typer.ComponentInfo
+import kyo.*
 
 object Expander:
 
@@ -22,20 +22,20 @@ object Expander:
           Expr.InputCall(PortIdentifier.Main(name))
         case PortIdentifier.Sub(subComponent, name) =>
           Expr.InputCall(PortIdentifier.Main(prefixIdentifier(subComponent, name)))
-      
-    case Expr.Not(expr) => Expr.Not(expandExpr(expr))
-    case Expr.Or(left, right) => Expr.Or(expandExpr(left), expandExpr(right))
+
+    case Expr.Not(expr)        => Expr.Not(expandExpr(expr))
+    case Expr.Or(left, right)  => Expr.Or(expandExpr(left), expandExpr(right))
     case Expr.And(left, right) => Expr.And(expandExpr(left), expandExpr(right))
     case Expr.Xor(left, right) => Expr.Xor(expandExpr(left), expandExpr(right))
-  
+
   def prefixExpr(prefix: Identifier, expr: Expr): Expr = expr match
     case Expr.LBool(value) => Expr.LBool(value)
     case Expr.InputCall(identifier) =>
       identifier match
-        case PortIdentifier.Main(name) => Expr.InputCall(PortIdentifier.Main(prefixIdentifier(prefix, name)))
+        case PortIdentifier.Main(name)              => Expr.InputCall(PortIdentifier.Main(prefixIdentifier(prefix, name)))
         case PortIdentifier.Sub(subComponent, name) => throw AssertionError(s"Subcomponent port in expanded component: $subComponent.$name")
-    case Expr.Not(expr) => Expr.Not(prefixExpr(prefix, expr))
-    case Expr.Or(left, right) => Expr.Or(prefixExpr(prefix, left), prefixExpr(prefix, right))
+    case Expr.Not(expr)        => Expr.Not(prefixExpr(prefix, expr))
+    case Expr.Or(left, right)  => Expr.Or(prefixExpr(prefix, left), prefixExpr(prefix, right))
     case Expr.And(left, right) => Expr.And(prefixExpr(prefix, left), prefixExpr(prefix, right))
     case Expr.Xor(left, right) => Expr.Xor(prefixExpr(prefix, left), prefixExpr(prefix, right))
 

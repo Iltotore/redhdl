@@ -7,9 +7,9 @@ import io.github.iltotore.redhdl.typer.ComponentIO
 import kyo.Chunk
 
 case class ExpandedComponent(
-  io: ComponentIO,
-  internalPorts: Chunk[(Identifier, Type)],
-  body: Chunk[(Identifier, Expr)]
+    io: ComponentIO,
+    internalPorts: Chunk[(Identifier, Type)],
+    body: Chunk[(Identifier, Expr)]
 ):
 
   def getExpr(port: Identifier): Expr =

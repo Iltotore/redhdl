@@ -1,13 +1,13 @@
 package io.github.iltotore.redhdl.graph
 
-import kyo.Chunk
 import kyo.Absent
+import kyo.Chunk
+import kyo.Maybe
 import kyo.Present
+import scala.annotation.nowarn
+import scala.annotation.threadUnsafe
 import scala.collection.mutable
 import scala.math.Ordering.Implicits.infixOrderingOps
-import scala.annotation.nowarn
-import kyo.Maybe
-import scala.annotation.threadUnsafe
 
 object GraphRouter:
 
@@ -70,9 +70,9 @@ object GraphRouter:
       val node = updatedGraph.getNode(id)
       val nextId = updatedGraph.nodes.size
       val numberOfRelays = targetY - (y + 1)
-      val nextIdAfterRelays = nextId+numberOfRelays
+      val nextIdAfterRelays = nextId + numberOfRelays
       val relayOutputs = Chunk
-        .range(nextIdAfterRelays-1, nextId-1, -1)
+        .range(nextIdAfterRelays - 1, nextId - 1, -1)
         .map(id => NodeOutput(NodeId.assume(id), 0))
 
       val nodes = relayOutputs
@@ -82,7 +82,7 @@ object GraphRouter:
         .map(out => Node(NodeType.Relay, Chunk(out)))
 
       val updatedNodeOutputs = node.outputs.updated(outputIndex, relayOutputs.head)
-      
+
       updatedGraph = updatedGraph.copy(nodes =
         updatedGraph
           .nodes
@@ -90,12 +90,12 @@ object GraphRouter:
           .appendedAll(nodes)
       )
 
-      for (relay, y) <- relayOutputs.zip(y+1 until targetY) do
+      for (relay, y) <- relayOutputs.zip(y + 1 until targetY) do
         updatedLayers = updatedLayers.updated(y, updatedLayers(y) :+ relay.id)
 
     (updatedGraph, updatedLayers)
 
-  //Might just be replaced by a zipWithIndex in getChannel in the future
+  // Might just be replaced by a zipWithIndex in getChannel in the future
   def getXPositions(graph: Graph, layers: Chunk[Chunk[NodeId]]): Map[NodeOutput, PinX] =
     val positions = mutable.Map.empty[NodeOutput, PinX]
 
@@ -103,21 +103,20 @@ object GraphRouter:
       var x = PinX(0)
       for
         id <- layer
-        input <- 0 until graph.getNode(id).tpe.width
+        input <- 0 until graph.getNode(id).tpe.sizeX
       do
         positions(NodeOutput(id, input)) = x
         x += 1
 
     positions.toMap
 
-  //See https://github.com/itsfrank/MinecraftHDL/blob/c66690ae2f1ee2b04aae214a694eb6fe0e03d326/src/main/java/minecrafthdl/synthesis/routing/Router.java#L91
+  // See https://github.com/itsfrank/MinecraftHDL/blob/c66690ae2f1ee2b04aae214a694eb6fe0e03d326/src/main/java/minecrafthdl/synthesis/routing/Router.java#L91
   def createChannel(graph: Graph, xPos: Map[NodeOutput, PinX], from: Chunk[NodeId], to: Chunk[NodeId]): Channel =
     Channel(
       for
         nodeId <- from
         outputPos <- graph.getOutputs(nodeId).map(xPos.apply)
-      yield
-        Net(xPos(NodeOutput(nodeId, 0)), outputPos, Absent),
+      yield Net(xPos(NodeOutput(nodeId, 0)), outputPos, Absent),
       Chunk.empty,
       Absent
     )
@@ -133,7 +132,7 @@ object GraphRouter:
     rec(at.end)
 
   /**
-   * Break the cycle if it exists at the given net by creating an out column/net 
+   * Break the cycle if it exists at the given net by creating an out column/net
    */
   def breakCycle(channel: Channel, done: Set[NetId], netId: NetId): (Channel, Set[NetId]) =
     val net = channel.getNet(netId)
@@ -164,7 +163,7 @@ object GraphRouter:
   Pour Net2:
     - Track 0 (car Net1.left > Track0.end): [Net0, Net1] (end = 2)
     - Track 1: [Net2] (end = 3)
-  */
+   */
   def assignTrack(channel: Channel, netId: NetId): Channel =
     val net = channel.nets(netId.value)
     val availableTrack = channel
@@ -210,7 +209,7 @@ object GraphRouter:
 
     while !queue.isEmpty do
       val (net, id) = queue.dequeue()
-      
+
       if degrees.getOrElse(net.end, 0) == 0 || net.start == net.end then
         result += NetId.assume(id)
         degrees(net.start) -= 1
@@ -259,4 +258,4 @@ Si on brise le cycle:
 
 A -> D -> B
 B -> C -> A
-*/
+ */

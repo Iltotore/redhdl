@@ -1,13 +1,13 @@
 package io.github.iltotore.redhdl.typer
 
-import kyo.*
 import io.github.iltotore.redhdl.ast.Expr
 import io.github.iltotore.redhdl.ast.Identifier
 import io.github.iltotore.redhdl.ast.PortIdentifier
 import io.github.iltotore.redhdl.ast.Type
+import kyo.*
 
 case class GlobalContext(
-  components: Map[Identifier, ComponentInfo]
+    components: Map[Identifier, ComponentInfo]
 ):
 
   def getComponent(name: Identifier): Option[ComponentInfo] =
@@ -63,7 +63,7 @@ object GlobalContext:
       )
     )
   ))
-  
+
   def getComponent(name: Identifier): Option[ComponentInfo] < Typing.Global =
     Var.use[GlobalContext](_.getComponent(name))
 

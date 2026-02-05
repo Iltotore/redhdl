@@ -1,14 +1,14 @@
 package io.github.iltotore.redhdl.typer
 
-import kyo.*
 import io.github.iltotore.redhdl.ast.Identifier
 import io.github.iltotore.redhdl.ast.PortIdentifier
 import io.github.iltotore.redhdl.ast.Type
+import kyo.*
 
 case class ComponentContext(
-  currentComponent: ComponentIO,
-  subcomponents: Map[Identifier, ComponentIO],
-  remainingPorts: Set[PortIdentifier]
+    currentComponent: ComponentIO,
+    subcomponents: Map[Identifier, ComponentIO],
+    remainingPorts: Set[PortIdentifier]
 ):
 
   def getCallableType(identifier: PortIdentifier): Option[Type] = identifier match
@@ -20,7 +20,6 @@ case class ComponentContext(
     case PortIdentifier.Main(name) => currentComponent.outputs.get(name)
     case PortIdentifier.Sub(subComponent, name) =>
       subcomponents.get(subComponent).flatMap(_.inputs.get(name))
-  
 
 object ComponentContext:
   def default(currentComponent: ComponentIO): ComponentContext =

@@ -24,7 +24,7 @@ object Lexer:
     "not" -> Token.Not,
     "or" -> Token.Or,
     "and" -> Token.And,
-    "xor" -> Token.Xor,
+    "xor" -> Token.Xor
   )
 
   val parseTerm: Token < Parse[Char] = Parse.firstOf(
@@ -32,7 +32,7 @@ object Lexer:
     Parse.inOrder(
       Parse.identifier,
       Parse.literal('.'),
-      Parse.require(withErrorMessage(Parse.identifier, "Identifier expected after `.`")),
+      Parse.require(withErrorMessage(Parse.identifier, "Identifier expected after `.`"))
     ).map((sub, _, name) => Token.SubIdent(Identifier.assume(sub.toString), Identifier.assume(name.toString))),
     Parse.identifier.map(id => Token.MainIdent(Identifier.assume(id.toString)))
   )
@@ -64,5 +64,5 @@ object Lexer:
       RecoverStrategy.skipThenRetryUntil(Parse.any, parser)
     )
 
-  val parseTokens: Chunk[Token] < Parse[Char] = 
+  val parseTokens: Chunk[Token] < Parse[Char] =
     Parse.spaced(Parse.repeatUntil(parseAnyToken, Parse.end))

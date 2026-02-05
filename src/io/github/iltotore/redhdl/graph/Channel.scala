@@ -1,5 +1,6 @@
 package io.github.iltotore.redhdl.graph
 
+import kyo.Absent
 import kyo.Chunk
 import kyo.Maybe
 import kyo.Present
@@ -14,9 +15,8 @@ case class Channel(nets: Chunk[Net], tracks: Chunk[Track], firstOuterColumn: May
       .zipWithIndex
       .collect:
         case (net, id) if net.start == pos => (NetId.assume(id), net)
-    
 
-  //TODO Store TrackId in Net instead of NetId in Track
+  // TODO Store TrackId in Net instead of NetId in Track
   def getNetTrack(id: NetId): Maybe[TrackId] =
     Maybe.fromOption(
       tracks.zipWithIndex.collectFirst:
@@ -29,7 +29,9 @@ case class Channel(nets: Chunk[Net], tracks: Chunk[Track], firstOuterColumn: May
 
   def maxPinX: PinX = nets.map(_.right).max
 
-  def width: Int = maxPinX.value + 1
+  def sizeX: Int = maxPinX.value + 1
+
+  def sizeZ: Int = tracks.size
 
   def isOuterColumn(column: PinX): Boolean = firstOuterColumn.exists(column >= _)
 
@@ -46,9 +48,9 @@ case class Channel(nets: Chunk[Net], tracks: Chunk[Track], firstOuterColumn: May
   | ---
   | +
   2 3
-  
 
-  */
+
+   */
 
   def reroute(id: NetId): Channel =
     val net = getNet(id)

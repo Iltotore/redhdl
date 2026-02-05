@@ -1,8 +1,8 @@
 package io.github.iltotore.redhdl.typer
 
 import io.github.iltotore.redhdl.ast.Identifier
-import io.github.iltotore.redhdl.ast.Type
 import io.github.iltotore.redhdl.ast.PortIdentifier
+import io.github.iltotore.redhdl.ast.Type
 
 enum TypeFailure:
   case Mismatch(got: Type, expected: Type)
