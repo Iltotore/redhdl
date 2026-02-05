@@ -32,7 +32,14 @@ object Block:
 
   val Air: Block = Block("minecraft:air")
 
-  def Sign(messages: String*): Block =
+  enum Facing derives CanEqual:
+    case North, South
+
+    def toRotation: String = this match
+      case North => "8"
+      case South => "0"
+
+  def Sign(rotation: Facing, messages: String*): Block =
     val messageLines = messages ++ Chunk.fill(math.max(0, 4 - messages.length))("")
     val frontMessagesTag = ListTag(classOf[StringTag])
     for msg <- messageLines do frontMessagesTag.addString(msg)
@@ -45,6 +52,6 @@ object Block:
 
     Block(
       id = "minecraft:oak_sign",
-      attributes = Map("facing" -> "north"),
+      attributes = Map("rotation" -> rotation.toRotation),
       entity = Present(BlockEntity("minecraft:sign", data))
     )

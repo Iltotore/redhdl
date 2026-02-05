@@ -76,11 +76,11 @@ object SchematicGenerator:
       case NodeType.Input(name) =>
         pasteGateSchematic(tpe.toGateType, structure, at)
           .now
-          .withBlock(at + (0, 2, 3), Block.Sign(name.value))
+          .withBlock(at + (0, 2, 3), Block.Sign(Block.Facing.North, name.value))
       case NodeType.Output(name) =>
         pasteGateSchematic(tpe.toGateType, structure.withBlock(at, Block("minecraft:blue_wool")), at)
           .now
-          .withBlock(at + (0, 2, 0), Block.Sign(name.value))
+          .withBlock(at + (0, 2, 0), Block.Sign(Block.Facing.South, name.value))
       case _ => pasteGateSchematic(tpe.toGateType, structure.withBlock(at, Block("minecraft:blue_wool")), at).now
 
   def putNet(channel: Channel, id: NetId, net: Net, structure: Structure, at: BlockPos, startZ: Int): Structure < SchematicGeneration = direct:
