@@ -1,8 +1,8 @@
 package io.github.iltotore.redhdl.graph
 
 import io.github.iltotore.iron.*
-import io.github.iltotore.iron.constraint.numeric.Positive0
 import io.github.iltotore.iron.constraint.numeric.Interval
+import io.github.iltotore.iron.constraint.numeric.Positive0
 import scala.annotation.targetName
 
 type NodeId = NodeId.T

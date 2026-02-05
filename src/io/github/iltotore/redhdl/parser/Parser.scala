@@ -1,12 +1,12 @@
 package io.github.iltotore.redhdl.parser
 
-import kyo.*
-import io.github.iltotore.redhdl.ast.Identifier
-import io.github.iltotore.redhdl.ast.PortIdentifier
-import io.github.iltotore.redhdl.ast.Type
 import io.github.iltotore.redhdl.ast.Component
 import io.github.iltotore.redhdl.ast.Expr
+import io.github.iltotore.redhdl.ast.Identifier
+import io.github.iltotore.redhdl.ast.PortIdentifier
 import io.github.iltotore.redhdl.ast.Program
+import io.github.iltotore.redhdl.ast.Type
+import kyo.*
 
 object Parser:
 
@@ -28,8 +28,8 @@ object Parser:
     )
 
   val parseLiteral: Expr < Parse[Token] = Parse.anyMatch:
-    case Token.LBool(value) => Expr.LBool(value)
-    case Token.MainIdent(name) => Expr.InputCall(PortIdentifier.Main(name))
+    case Token.LBool(value)        => Expr.LBool(value)
+    case Token.MainIdent(name)     => Expr.InputCall(PortIdentifier.Main(name))
     case Token.SubIdent(sub, name) => Expr.InputCall(PortIdentifier.Sub(sub, name))
 
   val parseIdentifier: Identifier < Parse[Token] = Parse.anyMatch:
@@ -87,7 +87,7 @@ object Parser:
     Parse.repeat(
       Parse.inOrder(
         Parse.anyMatch[PortIdentifier][Token]:
-          case Token.MainIdent(name) => PortIdentifier.Main(name)
+          case Token.MainIdent(name)     => PortIdentifier.Main(name)
           case Token.SubIdent(sub, name) => PortIdentifier.Sub(sub, name),
         Parse.literal(Token.Equal),
         parseExpr

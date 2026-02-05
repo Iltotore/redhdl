@@ -1,18 +1,17 @@
 package io.github.iltotore.redhdl.minecraft
 
-import io.github.iltotore.redhdl.graph.Channel
-import io.github.iltotore.redhdl.graph.Graph
-import io.github.iltotore.redhdl.graph.NodeId
-import io.github.iltotore.redhdl.graph.NodeType
-import kyo.*
-import io.github.iltotore.redhdl.graph.Net
-import io.github.iltotore.redhdl.graph.NetId
-import scala.util.Using
-import java.nio.file.Path as JPath
-import java.nio.file.Files
 import io.github.ensgijs.nbt.io.BinaryNbtHelpers
 import io.github.ensgijs.nbt.io.CompressionType
 import io.github.iltotore.redhdl.graph.Channel
+import io.github.iltotore.redhdl.graph.Graph
+import io.github.iltotore.redhdl.graph.Net
+import io.github.iltotore.redhdl.graph.NetId
+import io.github.iltotore.redhdl.graph.NodeId
+import io.github.iltotore.redhdl.graph.NodeType
+import java.nio.file.Files
+import java.nio.file.Path as JPath
+import kyo.*
+import scala.util.Using
 
 object SchematicGenerator:
 
@@ -86,7 +85,7 @@ object SchematicGenerator:
 
   def putNet(channel: Channel, id: NetId, net: Net, structure: Structure, at: BlockPos, startZ: Int): Structure < SchematicGeneration = direct:
     println(s"Put net $id at $at")
-    
+
     val trackId = channel.getNetTrack(id).get
     val trackZ = trackId.value * trackSpacing + 3
     val endZ = getChannelSize(channel)
@@ -112,11 +111,9 @@ object SchematicGenerator:
         .withBlock(at + (endX, 1, trackZ + 1), Block("minecraft:black_wool"), overrideBlock = true)
         .withBlock(at + (endX, 2, trackZ + 1), Block("minecraft:redstone_wire"))
 
-    
-
     net.outerNet match
       case Absent => withoutLineAfterBridge
-        .withCircuitLineZ(at + (endX, 0, trackZ + 3), at.z + endZ)
+          .withCircuitLineZ(at + (endX, 0, trackZ + 3), at.z + endZ)
       case Present(outerId) =>
         val outerNet = channel.getNet(outerId)
         putNet(channel, outerId, outerNet, withoutLineAfterBridge, at, trackZ + 3).now
@@ -137,20 +134,20 @@ object SchematicGenerator:
               println(s"Layer place at X=$x (true pos: $realX)")
 
               s
-                .withBlock(at + (realX, 0, 0), Block("minecraft:yellow_wool"))  
-                .withBlock(at + (realX, 1, 0), Block("minecraft:repeater"))  
+                .withBlock(at + (realX, 0, 0), Block("minecraft:yellow_wool"))
+                .withBlock(at + (realX, 1, 0), Block("minecraft:repeater"))
             )
 
         val withIO =
           if nodeType.isOutput then withInputs
-          else 
+          else
             withInputs
               .withBlock(at + (x * columnSpacing, 0, gateSizeZ + 1), Block("minecraft:yellow_wool"))
               .withBlock(at + (x * columnSpacing, 1, gateSizeZ + 1), Block("minecraft:repeater"))
 
         putGate(nodeType, withIO, at + (x * columnSpacing, 0, 1))
           .map(Loop.continue(_, tail, x + sizeX))
-    
+
       case (struct, _, _) => Loop.done(struct)
     .now
 
@@ -159,10 +156,10 @@ object SchematicGenerator:
       case (struct, (net, id)) =>
         if channel.isOuterColumn(net.start) then struct
         else putNet(channel, NetId.assume(id), net, struct, at, 0)
-    
+
   def generateStructure(graph: Graph, layers: Chunk[Chunk[NodeId]], channels: Chunk[Channel]): Structure < SchematicGeneration = direct:
     println("TEST")
-    
+
     val emptyStructure = Structure.empty(getNeededRegion(graph, layers, channels).now)
     val withFirstLayer = putLayer(layers(0).map(id => graph.getNode(id).tpe), emptyStructure, BlockPos(0, 0, 0)).now
 
@@ -189,10 +186,10 @@ object SchematicGenerator:
     BinaryNbtHelpers.write(Structure.saveSponge(structure), path, CompressionType.GZIP): Unit
 
   def generateAndSaveStructure(
-    graph: Graph,
-    layers: Chunk[Chunk[NodeId]],
-    channels: Chunk[Channel],
-    path: String
+      graph: Graph,
+      layers: Chunk[Chunk[NodeId]],
+      channels: Chunk[Channel],
+      path: String
   ): Unit < (SchematicGeneration & Sync) =
     generateStructure(graph, layers, channels)
       .map(saveSchematic(_, path))

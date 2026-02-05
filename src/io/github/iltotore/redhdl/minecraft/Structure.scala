@@ -1,15 +1,15 @@
 package io.github.iltotore.redhdl.minecraft
 
-import kyo.*
-import java.io.IOException
+import io.github.ensgijs.nbt.tag.ByteTag
 import io.github.ensgijs.nbt.tag.CompoundTag
-import scala.jdk.CollectionConverters.SetHasAsScala
-import scala.jdk.CollectionConverters.ListHasAsScala
 import io.github.ensgijs.nbt.tag.DoubleTag
 import io.github.ensgijs.nbt.tag.IntTag
-import io.github.ensgijs.nbt.tag.StringTag
-import io.github.ensgijs.nbt.tag.ByteTag
 import io.github.ensgijs.nbt.tag.ListTag
+import io.github.ensgijs.nbt.tag.StringTag
+import java.io.IOException
+import kyo.*
+import scala.jdk.CollectionConverters.ListHasAsScala
+import scala.jdk.CollectionConverters.SetHasAsScala
 
 case class Structure(dimensions: BlockPos, var blocks: Chunk[Block]):
 
@@ -24,7 +24,7 @@ case class Structure(dimensions: BlockPos, var blocks: Chunk[Block]):
     val y = index / (width * length)
     val z = (index - y * width * length) / width
     val x = index - z * width - y * width * length
-    
+
     BlockPos(x, y, z)
 
   def apply(position: BlockPos): Block = blocks(positionToIndex(position))
@@ -32,7 +32,7 @@ case class Structure(dimensions: BlockPos, var blocks: Chunk[Block]):
   // Returns true if the given position is inside the structure bounds
   private def inBounds(pos: BlockPos): Boolean =
     pos.x >= 0 && pos.y >= 0 && pos.z >= 0 &&
-    pos.x < width && pos.y < height && pos.z < length
+      pos.x < width && pos.y < height && pos.z < length
 
   def withBlock(position: BlockPos, block: Block, overrideBlock: Boolean = false): Structure =
     if !inBounds(position) then
@@ -51,7 +51,7 @@ case class Structure(dimensions: BlockPos, var blocks: Chunk[Block]):
     Range.inclusive(positionA.x, to, step).foldLeft(this)((structure, x) =>
       structure.withBlock(BlockPos(x, positionA.y, positionA.z), block, overrideBlock)
     )
-  
+
   def withLineZ(positionA: BlockPos, to: Int, block: Block, overrideBlock: Boolean = false): Structure =
     val step = if to >= positionA.z then 1 else -1
     Range.inclusive(positionA.z, to, step).foldLeft(this)((structure, z) =>
@@ -70,8 +70,7 @@ case class Structure(dimensions: BlockPos, var blocks: Chunk[Block]):
         x <- 0 until structure.width
         y <- 0 until structure.height
         z <- 0 until structure.length
-      yield
-        BlockPos(x, y, z)
+      yield BlockPos(x, y, z)
 
     positions.foldLeft(this)((result, pos) => result.withBlock(position + pos, structure(pos)))
 
@@ -81,7 +80,7 @@ case class Structure(dimensions: BlockPos, var blocks: Chunk[Block]):
         val str = block.toSchemString
         if palette.contains(str) then (nextId, palette, data :+ palette(str).toByte)
         else ((nextId + 1).toByte, palette.updated(str, nextId), data :+ nextId)
-    
+
     (finalPalette, finalData)
 
 object Structure:
@@ -99,7 +98,7 @@ object Structure:
       Abort.fail(SchematicFailure.InvalidSchematic(path, s"Only Sponge schem v3 is supported. This schematic has version $version")).now
     if version > 3 then
       println(s"Warning: Schematic version $version is newer than supported v3. Attempting to load anyway.")
-    
+
     val width = schematic.getShort("Width").toInt
     val height = schematic.getShort("Height").toInt
     val length = schematic.getShort("Length").toInt
@@ -108,19 +107,19 @@ object Structure:
     val paletteTag = blocksTag.getCompoundTag("Palette")
 
     val palette = paletteTag.keySet().asScala.map:
-      case key@s"$id[$tagStr]" =>
+      case key @ s"$id[$tagStr]" =>
         val tag = CompoundTag()
 
         val attributes = tagStr
           .split(",")
           .map(line =>
             val split = line.split("=")
-            (split(0), split(1))  
+            (split(0), split(1))
           )
           .toMap
 
         (paletteTag.getInt(key), Block(id, attributes))
-    
+
       case id => (paletteTag.getInt(id), Block(id))
     .toMap
 
@@ -173,9 +172,8 @@ object Structure:
     blocksTag.putByteArray("Data", data.toArray)
     blocksTag.put("Palette", paletteTag)
 
-
     val schematicTag = CompoundTag()
-    schematicTag.putInt("DataVersion", 4671) //1.21.11
+    schematicTag.putInt("DataVersion", 4671) // 1.21.11
     schematicTag.putInt("Version", 3)
 
     schematicTag.putShort("Width", structure.dimensions.x.toShort)

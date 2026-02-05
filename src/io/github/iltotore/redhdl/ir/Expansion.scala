@@ -1,8 +1,8 @@
 package io.github.iltotore.redhdl.ir
 
-import kyo.*
 import io.github.iltotore.redhdl.ast.Identifier
 import io.github.iltotore.redhdl.typer.ComponentInfo
+import kyo.*
 
 type Expansion = Env[Map[Identifier, ComponentInfo]]
 

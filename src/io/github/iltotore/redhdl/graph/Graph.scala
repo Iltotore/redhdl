@@ -1,14 +1,14 @@
 package io.github.iltotore.redhdl.graph
 
-import kyo.*
 import io.github.iltotore.redhdl.ast.Identifier
+import kyo.*
 
 case class Graph(inputs: Map[Identifier, NodeId], nodes: Chunk[Node]):
 
   def getInputId(name: Identifier): NodeId =
     inputs.getOrElse(name, throw AssertionError(s"Use of unknown input: $name"))
 
-  def getNode(id: NodeId): Node = 
+  def getNode(id: NodeId): Node =
     if nodes.sizeCompare(id.value) > 1 then throw AssertionError(s"Use of unknown node: $id")
     else nodes(id.value)
 
@@ -23,7 +23,7 @@ case class Graph(inputs: Map[Identifier, NodeId], nodes: Chunk[Node]):
 
 object Graph:
 
-  def fromInputs(inputs: Chunk[Identifier]): Graph =  
+  def fromInputs(inputs: Chunk[Identifier]): Graph =
     Graph(
       NodeId.assumeAll(inputs.zipWithIndex.toMap),
       inputs.map(input => Node(NodeType.Input(input), Chunk.empty))

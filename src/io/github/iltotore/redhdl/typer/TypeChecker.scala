@@ -4,9 +4,9 @@ import io.github.iltotore.redhdl.ast.Component
 import io.github.iltotore.redhdl.ast.Expr
 import io.github.iltotore.redhdl.ast.Identifier
 import io.github.iltotore.redhdl.ast.PortIdentifier
+import io.github.iltotore.redhdl.ast.Program
 import io.github.iltotore.redhdl.ast.Type
 import kyo.*
-import io.github.iltotore.redhdl.ast.Program
 
 object TypeChecker:
 
@@ -45,7 +45,7 @@ object TypeChecker:
       val exprType = getType(expr).now
       ComponentContext.getAssignableType(name).now match
         case Some(tpe) => assertType(exprType, tpe).now
-        case None => Typing.fail(TypeFailure.UnknownAssignablePort(name)).now
+        case None      => Typing.fail(TypeFailure.UnknownAssignablePort(name)).now
     )
 
   def checkComponent(component: Component): Unit < Typing.Global = direct:

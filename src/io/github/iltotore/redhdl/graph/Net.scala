@@ -23,7 +23,7 @@ Track2: Net(2, 0)
 | |     |
 0 1 2 3 4...
 
-*/
+ */
 
 case class Net(start: PinX, end: PinX, outerNet: Maybe[NetId]):
 

@@ -1,8 +1,8 @@
 package io.github.iltotore.redhdl.graph
 
 import io.github.iltotore.redhdl.ast.Identifier
-import kyo.Chunk
 import io.github.iltotore.redhdl.minecraft.GateType
+import kyo.Chunk
 
 enum NodeType derives CanEqual:
   case Input(name: Identifier)
@@ -31,13 +31,12 @@ enum NodeType derives CanEqual:
   def isOutput: Boolean = this.isInstanceOf[Output]
 
   def toGateType: GateType = this match
-    case Input(_) => GateType.Input
+    case Input(_)  => GateType.Input
     case Output(_) => GateType.Output
-    case True => GateType.True
-    case False => GateType.False
-    case Not => GateType.Not
-    case Or => GateType.Or(OrSize(2))
-    case And => GateType.And(AndSize(2))
-    case Xor => GateType.Xor
-    case Relay => GateType.Relay
-  
+    case True      => GateType.True
+    case False     => GateType.False
+    case Not       => GateType.Not
+    case Or        => GateType.Or(OrSize(2))
+    case And       => GateType.And(AndSize(2))
+    case Xor       => GateType.Xor
+    case Relay     => GateType.Relay

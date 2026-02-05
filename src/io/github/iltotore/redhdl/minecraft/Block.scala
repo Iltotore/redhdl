@@ -2,13 +2,13 @@ package io.github.iltotore.redhdl.minecraft
 
 import io.github.ensgijs.nbt.tag.CompoundTag
 import io.github.ensgijs.nbt.tag.ListTag
+import io.github.ensgijs.nbt.tag.StringTag
 import io.github.ensgijs.nbt.tag.Tag
 import kyo.Absent
+import kyo.Chunk
 import kyo.Maybe
 import kyo.Present
 import scala.jdk.CollectionConverters.SetHasAsScala
-import io.github.ensgijs.nbt.tag.StringTag
-import kyo.Chunk
 
 case class Block(id: String, attributes: Map[String, String] = Map.empty, entity: Maybe[BlockEntity] = Absent):
 

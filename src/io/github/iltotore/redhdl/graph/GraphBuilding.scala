@@ -1,8 +1,8 @@
 package io.github.iltotore.redhdl.graph
 
-import kyo.*
 import io.github.iltotore.redhdl.ast.Identifier
 import io.github.iltotore.redhdl.ir.SimplifiedComponent
+import kyo.*
 
 type GraphBuilding = Var[Graph]
 
