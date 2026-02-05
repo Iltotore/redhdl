@@ -88,7 +88,7 @@ object SchematicGenerator:
 
     val trackId = channel.getNetTrack(id).get
     val trackZ = trackId.value * trackSpacing + 3
-    val endZ = getChannelSize(channel)
+    val endZ = getChannelSize(channel) - 1
     val startX = net.start.value * columnSpacing
     val endX = net.end.value * columnSpacing
 
@@ -166,7 +166,7 @@ object SchematicGenerator:
     Loop(withFirstLayer, layers.tail, channels, layerSizeZ):
       case (struct, layer +: remainingLayers, channel +: remainingChannels, z) =>
         direct:
-          val layerStart = z + getChannelSize(channel) + 1
+          val layerStart = z + getChannelSize(channel)
 
           println(s"Channel size Z: ${getChannelSize(channel)}")
 
