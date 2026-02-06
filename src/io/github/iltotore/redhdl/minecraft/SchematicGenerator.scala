@@ -8,11 +8,11 @@ import io.github.iltotore.redhdl.graph.Net
 import io.github.iltotore.redhdl.graph.NetId
 import io.github.iltotore.redhdl.graph.NodeId
 import io.github.iltotore.redhdl.graph.NodeType
+import io.github.iltotore.redhdl.graph.TrackId
 import java.nio.file.Files
 import java.nio.file.Path as JPath
 import kyo.*
 import scala.util.Using
-import io.github.iltotore.redhdl.graph.TrackId
 
 object SchematicGenerator:
 
@@ -88,29 +88,29 @@ object SchematicGenerator:
       case _ => pasteGateSchematic(tpe.toGateType, structure.withBlock(at, Block("minecraft:blue_wool")), at).now
 
   def getTrackZ(channel: Channel, id: NetId): Int =
-      Loop(channel.tracks, 1):
-        case (track +: remaining, spacing) =>
-          val additionalSpacing =
-            if track.nets.forall(channel.getNet(_).isSingleLine) then 0
-            else trackSpacing
+    Loop(channel.tracks, 1):
+      case (track +: remaining, spacing) =>
+        val additionalSpacing =
+          if track.nets.forall(channel.getNet(_).isSingleLine) then 0
+          else trackSpacing
 
-          if track.nets.contains(id) then Loop.done(spacing)
-          else
-            Loop.continue(remaining, spacing + additionalSpacing)
+        if track.nets.contains(id) then Loop.done(spacing)
+        else
+          Loop.continue(remaining, spacing + additionalSpacing)
 
-        case _ => throw AssertionError(s"Not track for net $id")
-      .eval
+      case _ => throw AssertionError(s"Not track for net $id")
+    .eval
 
   def putNet(channel: Channel, id: NetId, net: Net, structure: Structure, at: BlockPos, startZ: Int): Structure < SchematicGeneration = direct:
 
     val trackZ = getTrackZ(channel, id)
 
     println(s"Put net $id at $at, track: ${channel.getNetTrack(id)}, Z: $trackZ")
-    
+
     val endZ = getChannelSize(channel) - 1
     val startX = net.start.value * columnSpacing
     val endX = net.end.value * columnSpacing
-    
+
     if startX == endX then
       structure
         .withCircuitLineZ(at + (startX, 0, startZ), at.z + endZ)
@@ -192,7 +192,7 @@ object SchematicGenerator:
           val channelSize = getChannelSize(channel)
           val layerStart = z + channelSize
 
-          val withChannel = 
+          val withChannel =
             if channelSize <= 0 then struct
             else putChannel(channel, struct, BlockPos(0, 0, z)).now
 
