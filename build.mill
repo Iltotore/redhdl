@@ -1,23 +1,12 @@
 import mill.*, scalalib.*, scalafmt.*
 
-object `package` extends ScalaModule with ScalafmtModule:
+object versions:
+  val scala = "3.7.3"
+  val kyo = "v1.0-RC1-fix2"
 
-  def scalaVersion = "3.7.3"
+trait BaseModule extends ScalaModule, ScalafmtModule:
 
-  val kyoVersion = "v1.0-RC1-fix2"
-
-  def repositories = Seq(
-    "https://maven.enginehub.org/repo/",
-    "https://jitpack.io/"
-  )
-
-  def mvnDeps = Seq(
-    mvn"com.github.iltotore.kyo::kyo-core:$kyoVersion",
-    mvn"com.github.iltotore.kyo::kyo-direct:$kyoVersion",
-    mvn"com.github.iltotore.kyo::kyo-parse:$kyoVersion",
-    mvn"io.github.iltotore::iron:3.2.0",
-    mvn"com.github.Iltotore:NBT:6.1.1"
-  )
+  def scalaVersion = versions.scala
 
   def scalacOptions = Seq(
     "-Wvalue-discard", 
@@ -26,10 +15,31 @@ object `package` extends ScalaModule with ScalafmtModule:
     "-language:strictEquality"
   )
 
-  override def ammoniteVersion = ""
+object main extends BaseModule:
 
-  object test extends ScalaTests with TestModule.Utest:
+  def repositories = Seq(
+    "https://maven.enginehub.org/repo/",
+    "https://jitpack.io/"
+  )
+
+  def mvnDeps = Seq(
+    mvn"com.github.iltotore.kyo::kyo-core:${versions.kyo}",
+    mvn"com.github.iltotore.kyo::kyo-direct:${versions.kyo}",
+    mvn"com.github.iltotore.kyo::kyo-parse:${versions.kyo}",
+    mvn"io.github.iltotore::iron:3.2.0",
+    mvn"com.github.Iltotore:NBT:6.1.1"
+  )
+
+  object test extends ScalaTests, TestModule.Utest:
 
     def utestVersion = "0.9.1"
 
     def compileResources = resources
+
+object cli extends BaseModule:
+
+  def moduleDeps = Seq(main)
+
+  def mvnDeps = Seq(
+    mvn""
+  )

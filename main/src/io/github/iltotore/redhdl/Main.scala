@@ -92,7 +92,7 @@ object Main extends KyoApp:
 
   run:
     direct:
-      val code = Using.resource(Source.fromFile("test/resources/golden/good/circuit/twoBitAdder.red"))(_.mkString)
+      val code = Using.resource(Source.fromFile("main/test/resources/golden/good/circuit/twoBitAdder.red"))(_.mkString)
 
       val typeResult = typecheck(code)
       Console.printLine(typeResult).now
