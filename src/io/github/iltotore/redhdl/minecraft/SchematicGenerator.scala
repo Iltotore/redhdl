@@ -41,7 +41,7 @@ object SchematicGenerator:
 
     def withCircuitLineZ(position: BlockPos, to: Int): Structure =
       val base = structure
-        .withLineZ(position, to, Block("minecraft:pink_wool"))
+        .withLineZ(position, to, Block("minecraft:white_wool"))
         .withLineZ(position + (0, 1, 0), to, Block("minecraft:redstone_wire"))
 
       val (repeaterPositions, repeaterFacing) =
@@ -57,11 +57,10 @@ object SchematicGenerator:
       )
 
   def getChannelSize(channel: Channel): Int =
-    // channel.tracks.size * trackSpacing + 4
-    channel.tracks.foldLeft(0)((acc, track) =>
+    channel.tracks.foldLeft(-1)((acc, track) =>
       if track.nets.forall(channel.getNet(_).isSingleLine) then acc
       else acc + trackSpacing
-    ) + 2
+    )
 
   def getNeededRegion(graph: Graph, layers: Chunk[Chunk[NodeId]], channels: Chunk[Channel]): BlockPos < SchematicGeneration = direct:
     val sizeX = channels.map(_.sizeX).max * columnSpacing
@@ -95,7 +94,7 @@ object SchematicGenerator:
             if track.nets.forall(channel.getNet(_).isSingleLine) then 0
             else trackSpacing
 
-          if track.nets.contains(id) then Loop.done(spacing/* + additionalSpacing*/)
+          if track.nets.contains(id) then Loop.done(spacing)
           else
             Loop.continue(remaining, spacing + additionalSpacing)
 
@@ -137,7 +136,7 @@ object SchematicGenerator:
 
       net.outerNet match
         case Absent => withoutLineAfterBridge
-            .withCircuitLineZ(at + (endX, 0, trackZ + 3), at.z + endZ)
+            .withCircuitLineZ(at + (endX, 0, math.min(endZ, trackZ + 3)), at.z + endZ)
         case Present(outerId) =>
           val outerNet = channel.getNet(outerId)
           putNet(channel, outerId, outerNet, withoutLineAfterBridge, at, trackZ + 3).now
@@ -179,7 +178,7 @@ object SchematicGenerator:
     Kyo.foldLeft(channel.nets.zipWithIndex)(structure):
       case (struct, (net, id)) =>
         if channel.isOuterColumn(net.start) then struct
-        else putNet(channel, NetId.assume(id), net, struct, at, 0).map(_.withBlock(at, Block("minecraft:lime_wool"), true))
+        else putNet(channel, NetId.assume(id), net, struct, at, 0)
 
   def generateStructure(graph: Graph, layers: Chunk[Chunk[NodeId]], channels: Chunk[Channel]): Structure < SchematicGeneration = direct:
     println("TEST")
@@ -190,11 +189,13 @@ object SchematicGenerator:
     Loop(withFirstLayer, layers.tail, channels, layerSizeZ):
       case (struct, layer +: remainingLayers, channel +: remainingChannels, z) =>
         direct:
-          val layerStart = z + getChannelSize(channel)
+          val channelSize = getChannelSize(channel)
+          val layerStart = z + channelSize
 
-          println(s"Channel size Z: ${getChannelSize(channel)}")
+          val withChannel = 
+            if channelSize <= 0 then struct
+            else putChannel(channel, struct, BlockPos(0, 0, z)).now
 
-          val withChannel = putChannel(channel, struct, BlockPos(0, 0, z)).now
           val withChannelAndLayer = putLayer(layer.map(id => graph.getNode(id).tpe), withChannel, BlockPos(0, 0, layerStart)).now
           Loop.continue[Structure, Chunk[Chunk[NodeId.T]], Chunk[Channel], Int, Structure](
             withChannelAndLayer,
