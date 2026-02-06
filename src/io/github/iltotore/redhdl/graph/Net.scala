@@ -29,3 +29,5 @@ case class Net(start: PinX, end: PinX, outerNet: Maybe[NetId]):
 
   val left: PinX = if start < end then start else end
   val right: PinX = if end > start then end else start
+
+  def isSingleLine: Boolean = start == end

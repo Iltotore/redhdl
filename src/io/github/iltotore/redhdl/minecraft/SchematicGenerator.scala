@@ -8,6 +8,7 @@ import io.github.iltotore.redhdl.graph.Net
 import io.github.iltotore.redhdl.graph.NetId
 import io.github.iltotore.redhdl.graph.NodeId
 import io.github.iltotore.redhdl.graph.NodeType
+import io.github.iltotore.redhdl.graph.TrackId
 import java.nio.file.Files
 import java.nio.file.Path as JPath
 import kyo.*
@@ -56,7 +57,10 @@ object SchematicGenerator:
       )
 
   def getChannelSize(channel: Channel): Int =
-    channel.tracks.size * trackSpacing + 4
+    channel.tracks.foldLeft(-1)((acc, track) =>
+      if track.nets.forall(channel.getNet(_).isSingleLine) then acc
+      else acc + trackSpacing
+    )
 
   def getNeededRegion(graph: Graph, layers: Chunk[Chunk[NodeId]], channels: Chunk[Channel]): BlockPos < SchematicGeneration = direct:
     val sizeX = channels.map(_.sizeX).max * columnSpacing
@@ -83,40 +87,59 @@ object SchematicGenerator:
           .withBlock(at + (0, 2, 0), Block.Sign(Block.Facing.South, name.value))
       case _ => pasteGateSchematic(tpe.toGateType, structure.withBlock(at, Block("minecraft:blue_wool")), at).now
 
-  def putNet(channel: Channel, id: NetId, net: Net, structure: Structure, at: BlockPos, startZ: Int): Structure < SchematicGeneration = direct:
-    println(s"Put net $id at $at")
+  def getTrackZ(channel: Channel, id: NetId): Int =
+    Loop(channel.tracks, 1):
+      case (track +: remaining, spacing) =>
+        val additionalSpacing =
+          if track.nets.forall(channel.getNet(_).isSingleLine) then 0
+          else trackSpacing
 
-    val trackId = channel.getNetTrack(id).get
-    val trackZ = trackId.value * trackSpacing + 3
+        if track.nets.contains(id) then Loop.done(spacing)
+        else
+          Loop.continue(remaining, spacing + additionalSpacing)
+
+      case _ => throw AssertionError(s"Not track for net $id")
+    .eval
+
+  def putNet(channel: Channel, id: NetId, net: Net, structure: Structure, at: BlockPos, startZ: Int): Structure < SchematicGeneration = direct:
+
+    val trackZ = getTrackZ(channel, id)
+
+    println(s"Put net $id at $at, track: ${channel.getNetTrack(id)}, Z: $trackZ")
+
     val endZ = getChannelSize(channel) - 1
     val startX = net.start.value * columnSpacing
     val endX = net.end.value * columnSpacing
 
-    val withoutLineAfterBridge =
+    if startX == endX then
       structure
-        // Line before bridge
-        .withCircuitLineZ(at + (startX, 0, startZ), at.z + trackZ - 3)
-        // Bridge
-        .withCircuitLineX(at + (startX, 2, trackZ), at.x + endX)
-        // Bridge start repeater
-        .withBlock(at + (startX, 0, trackZ - 2), Block("minecraft:orange_wool"))
-        .withBlock(at + (startX, 1, trackZ - 2), Block("minecraft:repeater"), overrideBlock = true)
-        // Bridge end repeater
-        .withBlock(at + (endX, 0, trackZ + 2), Block("minecraft:green_wool"))
-        .withBlock(at + (endX, 1, trackZ + 2), Block("minecraft:repeater"), overrideBlock = true)
-        // Bridge start
-        .withBlock(at + (startX, 1, trackZ - 1), Block("minecraft:magenta_wool"), overrideBlock = true)
-        .withBlock(at + (startX, 2, trackZ - 1), Block("minecraft:redstone_wire"))
-        // and end
-        .withBlock(at + (endX, 1, trackZ + 1), Block("minecraft:black_wool"), overrideBlock = true)
-        .withBlock(at + (endX, 2, trackZ + 1), Block("minecraft:redstone_wire"))
+        .withCircuitLineZ(at + (startX, 0, startZ), at.z + endZ)
+    else
+      val withoutLineAfterBridge =
+        structure
+          // Line before bridge
+          .withCircuitLineZ(at + (startX, 0, startZ), at.z + math.max(0, trackZ - 3))
+          // Bridge
+          .withCircuitLineX(at + (startX, 2, trackZ), at.x + endX)
+          // Bridge start repeater
+          .withBlock(at + (startX, 0, trackZ - 2), Block("minecraft:orange_wool"))
+          .withBlock(at + (startX, 1, trackZ - 2), Block("minecraft:repeater"), overrideBlock = true)
+          // Bridge end repeater
+          .withBlock(at + (endX, 0, trackZ + 2), Block("minecraft:green_wool"))
+          .withBlock(at + (endX, 1, trackZ + 2), Block("minecraft:repeater"), overrideBlock = true)
+          // Bridge start
+          .withBlock(at + (startX, 1, trackZ - 1), Block("minecraft:magenta_wool"), overrideBlock = true)
+          .withBlock(at + (startX, 2, trackZ - 1), Block("minecraft:redstone_wire"))
+          // and end
+          .withBlock(at + (endX, 1, trackZ + 1), Block("minecraft:black_wool"), overrideBlock = true)
+          .withBlock(at + (endX, 2, trackZ + 1), Block("minecraft:redstone_wire"))
 
-    net.outerNet match
-      case Absent => withoutLineAfterBridge
-          .withCircuitLineZ(at + (endX, 0, trackZ + 3), at.z + endZ)
-      case Present(outerId) =>
-        val outerNet = channel.getNet(outerId)
-        putNet(channel, outerId, outerNet, withoutLineAfterBridge, at, trackZ + 3).now
+      net.outerNet match
+        case Absent => withoutLineAfterBridge
+            .withCircuitLineZ(at + (endX, 0, math.min(endZ, trackZ + 3)), at.z + endZ)
+        case Present(outerId) =>
+          val outerNet = channel.getNet(outerId)
+          putNet(channel, outerId, outerNet, withoutLineAfterBridge, at, trackZ + 3).now
 
   def putLayer(layer: Chunk[NodeType], structure: Structure, at: BlockPos): Structure < SchematicGeneration = direct:
     val layerSize = layer.map(_.sizeX).sum
@@ -166,11 +189,13 @@ object SchematicGenerator:
     Loop(withFirstLayer, layers.tail, channels, layerSizeZ):
       case (struct, layer +: remainingLayers, channel +: remainingChannels, z) =>
         direct:
-          val layerStart = z + getChannelSize(channel)
+          val channelSize = getChannelSize(channel)
+          val layerStart = z + channelSize
 
-          println(s"Channel size Z: ${getChannelSize(channel)}")
+          val withChannel =
+            if channelSize <= 0 then struct
+            else putChannel(channel, struct, BlockPos(0, 0, z)).now
 
-          val withChannel = putChannel(channel, struct, BlockPos(0, 0, z)).now
           val withChannelAndLayer = putLayer(layer.map(id => graph.getNode(id).tpe), withChannel, BlockPos(0, 0, layerStart)).now
           Loop.continue[Structure, Chunk[Chunk[NodeId.T]], Chunk[Channel], Int, Structure](
             withChannelAndLayer,
