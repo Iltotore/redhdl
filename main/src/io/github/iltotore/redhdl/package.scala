@@ -13,6 +13,11 @@ import io.github.iltotore.redhdl.ir.Expander
 import io.github.iltotore.redhdl.ir.Expansion
 import io.github.iltotore.redhdl.ir.SimplifiedComponent
 import io.github.iltotore.redhdl.ir.Simplifier
+import io.github.iltotore.redhdl.minecraft.GateType
+import io.github.iltotore.redhdl.minecraft.SchematicContext
+import io.github.iltotore.redhdl.minecraft.SchematicGeneration
+import io.github.iltotore.redhdl.minecraft.SchematicGenerator
+import io.github.iltotore.redhdl.minecraft.Structure
 import io.github.iltotore.redhdl.parser.Lexer
 import io.github.iltotore.redhdl.parser.Parser
 import io.github.iltotore.redhdl.typer.ComponentInfo
@@ -20,25 +25,15 @@ import io.github.iltotore.redhdl.typer.TypeChecker
 import io.github.iltotore.redhdl.typer.Typing
 import kyo.*
 import kyo.Channel as KyoChannel
+import io.github.iltotore.redhdl.typer.TypeFailure
 
-def parse(code: String): ParseResult[Program] =
-  direct:
-    val lexResult = Parse.runResult(code)(Lexer.parseTokens).now
-    lexResult.out match
-      case Absent => ParseResult(lexResult.errors, Absent, lexResult.fatal)
-      case Present(tokens) =>
-        val parseResult = Parse.runResult(tokens)(Parser.parseProgram).now
-        parseResult.copy(errors = lexResult.errors ++ parseResult.errors)
-  .eval
+def parse(code: String): Program < Compilation =
+  Compilation
+    .fromParseResult(Parse.runResult(code)(Lexer.parseTokens))
+    .map(tokens => Compilation.fromParseResult(Parse.runResult(tokens)(Parser.parseProgram)))
 
-def typecheck(code: String): Result[Chunk[CompilerFailure], Map[Identifier, ComponentInfo]] =
-  val parsed = parse(code)
-  parsed.out match
-    case Absent => Result.Failure(parsed.errors)
-    case Present(program) =>
-      Typing.runGlobal(TypeChecker.checkProgram(program))
-        .eval
-        .mapFailure(parsed.errors ++ _)
+def typecheck(program: Program): Map[Identifier, ComponentInfo] < Compilation =
+  Typing.runGlobal(TypeChecker.checkProgram(program))
 
 def compileToGraph(entrypoint: Identifier, components: Map[Identifier, ComponentInfo]): Graph =
   Expander
@@ -47,5 +42,26 @@ def compileToGraph(entrypoint: Identifier, components: Map[Identifier, Component
     .map(GraphBuilding.buildGraph)
     .handle(Expansion.run(components)).eval
 
-def compileToSchem(graph: Graph, layers: Chunk[Chunk[NodeId]]): Chunk[Channel] =
-  GraphRouter.routeGraph(graph, layers)
+def compileToSchem(graph: Graph, layers: Chunk[Chunk[NodeId]], context: SchematicContext): Structure < Compilation =
+  SchematicGeneration.run(context)(SchematicGenerator.generateStructure(graph, layers, GraphRouter.routeGraph(graph, layers)))
+
+def compileRedHDL(code: String): Structure < Compilation =
+  for
+    fileName <- CompilationContext.fileName
+    entrypoint <- CompilationContext.entrypoint
+    components <- parse(code).map(typecheck)
+
+    resolvedEntrypoint =
+      entrypoint
+        .orElse(fileName.flatMap(name => Maybe.fromOption(components.keys.find(_.value.equalsIgnoreCase(name)))))
+        .getOrElse(Identifier("Main"))
+
+    _ <-
+      if components.contains(resolvedEntrypoint) then Kyo.unit
+      else Compilation.emitAndAbort(TypeFailure.UnknownEntrypoint(resolvedEntrypoint))
+
+    initialGraph = compileToGraph(resolvedEntrypoint, components)
+    initialLayers = GraphRouter.getLayers(initialGraph)
+    (graph, layers) = GraphRouter.addRelays(initialGraph, initialLayers)
+    schemContext <- Abort.recover(Compilation.emitAndAbort)(SchematicContext.load(GateType.values))
+  yield compileToSchem(graph, layers, schemContext)
