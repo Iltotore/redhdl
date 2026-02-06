@@ -169,12 +169,16 @@ object GraphRouter:
     val availableTrack = channel
       .tracks
       .zipWithIndex.find((track, trackId) =>
+        val hasSameStart = track.nets
+          .map(channel.getNet)
+          .exists(_.start == net.start) 
+
         val isTrackBeforeDest = channel
           .getNetAt(net.end)
           .flatMap((id, _) => channel.getNetTrack(id))
           .exists(destTrackId => trackId <= destTrackId.value)
 
-        channel.getTrackEnd(track) < net.left && !isTrackBeforeDest
+        (channel.getTrackEnd(track) < net.left || hasSameStart) && !isTrackBeforeDest
       )
     availableTrack match
       case None =>
