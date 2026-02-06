@@ -44,8 +44,8 @@ object SchematicGenerator:
         .withLineZ(position + (0, 1, 0), to, Block("minecraft:redstone_wire"))
 
       val (repeaterPositions, repeaterFacing) =
-        if position.z < to then ((position.z + 13) to to by 14, "north")
-        else ((position.z - 13) to to by -14, "south")
+        if position.z < to then ((position.z + 15) to to by 15, "north")
+        else ((position.z - 15) to to by -15, "south")
 
       repeaterPositions.foldLeft(base)((acc, z) =>
         acc.withBlock(

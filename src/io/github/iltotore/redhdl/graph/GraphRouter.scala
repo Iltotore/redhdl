@@ -171,7 +171,7 @@ object GraphRouter:
       .zipWithIndex.find((track, trackId) =>
         val hasSameStart = track.nets
           .map(channel.getNet)
-          .exists(_.start == net.start) 
+          .exists(_.start == net.start)
 
         val isTrackBeforeDest = channel
           .getNetAt(net.end)
