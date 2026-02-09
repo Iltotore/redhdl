@@ -24,7 +24,7 @@ import kyo.*
 import scala.io.Source
 import scala.util.Using
 
-object Main extends KyoApp:
+/*object Main extends KyoApp:
 
   def idToChar(id: NodeId): Char =
     if id.value >= 26 then ('a' + id.value - 26).toChar
@@ -130,3 +130,4 @@ object Main extends KyoApp:
             case Result.Failure(err) => Console.printLine(err).now
 
         case _ => Console.printLine(typeResult).now
+*/

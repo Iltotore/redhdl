@@ -1,8 +1,9 @@
 import mill.*, scalalib.*, scalafmt.*
 
 object versions:
-  val scala = "3.7.3"
+  val iron = "3.2.0"
   val kyo = "v1.0-RC1-fix2"
+  val scala = "3.7.3"
 
 trait BaseModule extends ScalaModule, ScalafmtModule:
 
@@ -26,7 +27,7 @@ object main extends BaseModule:
     mvn"com.github.iltotore.kyo::kyo-core:${versions.kyo}",
     mvn"com.github.iltotore.kyo::kyo-direct:${versions.kyo}",
     mvn"com.github.iltotore.kyo::kyo-parse:${versions.kyo}",
-    mvn"io.github.iltotore::iron:3.2.0",
+    mvn"io.github.iltotore::iron:${versions.iron}",
     mvn"com.github.Iltotore:NBT:6.1.1"
   )
 
@@ -41,5 +42,6 @@ object cli extends BaseModule:
   def moduleDeps = Seq(main)
 
   def mvnDeps = Seq(
-    mvn""
+    mvn"com.monovore::decline:2.5.0",
+    mvn"io.github.iltotore::iron-decline:${versions.iron}"
   )
