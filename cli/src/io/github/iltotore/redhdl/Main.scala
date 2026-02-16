@@ -60,11 +60,14 @@ object Main extends KyoCommandApp(
 
         code <- input.read
 
-
         structure <- Compilation.run(context)(compileRedHDL(code)).map:
           case Result.Success(result) => result
           case Result.Failure(failures) =>
-            Abort.fail(s"${failures.size} Compilation failures:\n${failures.mkString("- ", "\n- ", "")}")
+            val prettyFailures = failures
+              .map(_.toPrettyString)
+              .mkString("- ", "\n- ", "")
+              
+            Abort.fail(s"${failures.size} Compilation failures:\n$prettyFailures")
 
           case Result.Panic(throwable) => Abort.panic(throwable)
 
