@@ -1,7 +1,7 @@
 package io.github.iltotore.redhdl
 
-import kyo.*
 import com.monovore.decline.*
+import kyo.*
 
 class KyoCommandApp(command: Command[Unit < (Async & Abort[String | Throwable] & Scope)]) extends KyoApp:
 
@@ -25,5 +25,5 @@ class KyoCommandApp(command: Command[Unit < (Async & Abort[String | Throwable] &
 
   run:
     command.parse(PlatformApp.ambientArgs getOrElse args, sys.env) match
-      case Left(help) => Console.printLineErr(help)
+      case Left(help)     => Console.printLineErr(help)
       case Right(program) => Abort.recover[String](Console.printLineErr)(program)

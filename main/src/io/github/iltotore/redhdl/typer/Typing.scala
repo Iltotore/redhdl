@@ -1,8 +1,8 @@
 package io.github.iltotore.redhdl.typer
 
+import io.github.iltotore.redhdl.Compilation
 import io.github.iltotore.redhdl.ast.Identifier
 import io.github.iltotore.redhdl.ast.Program
-import io.github.iltotore.redhdl.Compilation
 import kyo.*
 
 type Typing = Emit[TypeFailure] & Abort[Unit]

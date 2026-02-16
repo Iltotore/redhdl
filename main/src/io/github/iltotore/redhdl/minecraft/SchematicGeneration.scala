@@ -1,7 +1,7 @@
 package io.github.iltotore.redhdl.minecraft
 
-import kyo.*
 import io.github.iltotore.redhdl.Compilation
+import kyo.*
 
 type SchematicGeneration = Env[SchematicContext] & Abort[SchematicFailure]
 

@@ -1,12 +1,12 @@
 package io.github.iltotore.redhdl
 
-import kyo.*
 import io.github.iltotore.redhdl.ast.Identifier
+import kyo.*
 
 case class CompilationContext(
-  fileName: Maybe[String],
-  entrypoint: Maybe[Identifier],
-  optimize: Boolean
+    fileName: Maybe[String],
+    entrypoint: Maybe[Identifier],
+    optimize: Boolean
 )
 
 object CompilationContext:

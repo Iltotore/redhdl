@@ -7,9 +7,9 @@ import io.github.iltotore.redhdl.graph.Graph
 import io.github.iltotore.redhdl.graph.GraphBuilder
 import io.github.iltotore.redhdl.graph.GraphBuilding
 import io.github.iltotore.redhdl.graph.GraphRouter
-import io.github.iltotore.redhdl.graph.NodeId
 import io.github.iltotore.redhdl.graph.Net
 import io.github.iltotore.redhdl.graph.NetId
+import io.github.iltotore.redhdl.graph.NodeId
 import io.github.iltotore.redhdl.ir.ExpandedComponent
 import io.github.iltotore.redhdl.ir.Expander
 import io.github.iltotore.redhdl.ir.Expansion
@@ -24,10 +24,10 @@ import io.github.iltotore.redhdl.parser.Lexer
 import io.github.iltotore.redhdl.parser.Parser
 import io.github.iltotore.redhdl.typer.ComponentInfo
 import io.github.iltotore.redhdl.typer.TypeChecker
+import io.github.iltotore.redhdl.typer.TypeFailure
 import io.github.iltotore.redhdl.typer.Typing
 import kyo.*
 import kyo.Channel as KyoChannel
-import io.github.iltotore.redhdl.typer.TypeFailure
 
 def parse(code: String): Program < Compilation =
   Compilation
@@ -74,7 +74,7 @@ def idToChar(id: NodeId): Char =
 
 /*
 String representation of the circuit
-  */
+ */
 private def showChannel(graph: Graph, layerSize: Int, layerFrom: Chunk[NodeId], channel: Channel): String =
   val colors = Chunk(
     scala.Console.RED,
