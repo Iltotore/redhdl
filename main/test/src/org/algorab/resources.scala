@@ -19,6 +19,23 @@ import io.github.iltotore.redhdl.ast.Identifier
 
 object resources:
 
+  private val defaultContext: CompilationContext = CompilationContext(
+    fileName = Absent,
+    entrypoint = Absent,
+    optimize = true
+  )
+
+  def runAssert[A](context: CompilationContext)(body: A < Compilation)(using Frame): Unit =
+    import AllowUnsafe.embrace.danger
+    Sync.Unsafe.evalOrThrow[Unit](
+      Compilation.run(context)(body).map:
+        case Result.Success(_) => Kyo.unit
+        case result@Result.Failure(failures) =>
+          val prettyFailures = failures.map(_.toPrettyString).mkString("- ", "\n- ", "")
+          Util.assertError(s"Compilation failed:\n$prettyFailures", Seq(TestValue.Single("result", None, result)))
+        case result@Result.Panic(error) => Util.assertError("Compilation panic", Seq(TestValue.Single("result", None, result)), error)
+    )
+
   def getResourcePath(url: URL): Path =
     if url.getProtocol == "file" then Paths.get(url.toURI)
     else
@@ -27,7 +44,7 @@ object resources:
       jarFS.getPath(strings(1))
 
   def listResources(folder: String): Chunk[Path] =
-    val path = getResourcePath(Main.getClass.getResource(folder))
+    val path = getResourcePath(this.getClass.getResource(folder))
     val ls = Files.walk(path).filter(Files.isRegularFile(_))
     Chunk.from(ls.map(path.relativize).collect(Collectors.toList()).asScala)
 
@@ -35,17 +52,20 @@ object resources:
     Using.resource(Source.fromInputStream(Files.newInputStream(path), "UTF-8"))(_.mkString)
 
   def runGoldenTest(name: Identifier, code: String): Unit =
-    typecheck(code) match
-      case Result.Success(components) =>
-          val componentName =
-            components.collectFirst:
-              case (n, _) if n.value.equalsIgnoreCase(name.value) => n
-            .getOrElse(Identifier("Main"))
+    runAssert(defaultContext)(
+      parse(code)
+        .map(typecheck)
+        .map(components =>
+              val componentName =
+                components.collectFirst:
+                  case (n, _) if n.value.equalsIgnoreCase(name.value) => n
+                .getOrElse(Identifier("Main"))
 
-          val initialGraph = compileToGraph(componentName, components)
-          val initialLayers = GraphRouter.getLayers(initialGraph)
-          GraphRouter.addRelays(initialGraph, initialLayers): Unit
-      case result => Util.assertError("Parsing/Typechecking failed", Seq(TestValue.Single("result", None, result)))
+              val initialGraph = compileToGraph(componentName, components)
+              val initialLayers = GraphRouter.getLayers(initialGraph)
+              GraphRouter.addRelays(initialGraph, initialLayers): Unit
+        )
+    )
 
   transparent inline def goldenTests(): Unit =
     ${goldenTestsImpl()}

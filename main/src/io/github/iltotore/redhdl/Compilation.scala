@@ -26,6 +26,5 @@ object Compilation:
       )
     )
 
-
   def emitAndAbort(failure: CompilerFailure): Nothing < Compilation =
     Emit.value(failure).andThen(Abort.fail(()))
