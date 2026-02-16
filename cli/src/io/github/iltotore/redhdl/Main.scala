@@ -29,24 +29,21 @@ object Main extends KyoCommandApp(
       Opts.option[Path]("output", "Path to write the schematic to", "o").orAbsent,
       Opts.option[Identifier]("entrypoint", "Program entrypoint", "e").orAbsent,
       Opts.flag("no-optimize", "Disable optimizations").orTrue
-    ).mapN((path, outputOpt, entrypoint, optimize) =>
+    ).mapN((input, outputOpt, entrypoint, optimize) =>
       for
-        exists <- path.exists
+        exists <- input.exists
         _ <-
           if exists then Kyo.unit
-          else Abort.fail(s"Path ${path.path.mkString(File.separator)} does not exist")
+          else Abort.fail(s"Path ${input.path.mkString(File.separator)} does not exist")
           
-        inputIsDir <- path.isDir
+        inputIsDir <- input.isDir
         _ <-
-          if inputIsDir then Abort.fail(s"Path ${path.path.mkString(File.separator)} is a directory")
+          if inputIsDir then Abort.fail(s"Path ${input.path.mkString(File.separator)} is a directory")
           else Kyo.unit
 
-        (name, output) =
-          outputOpt
-            .map(path => (programName(path, "schem"), path))
-            .getOrElse:
-              val inputName = programName(path, "red")
-              (inputName, Path(s"$inputName.schem"))
+        name = programName(input, "red")
+
+        output = outputOpt.getOrElse(Path(s"$name.schem"))
 
         outputIsDir <- output.isDir
         _ <-
@@ -59,9 +56,9 @@ object Main extends KyoCommandApp(
           optimize = optimize
         )
 
-        _ <- Console.printLine(s"Compiling ${path.path.mkString(File.separator)} to ${output.path.mkString(File.separator)}")
+        _ <- Console.printLine(s"Compiling ${input.path.mkString(File.separator)} to ${output.path.mkString(File.separator)}")
 
-        code <- path.read
+        code <- input.read
 
 
         structure <- Compilation.run(context)(compileRedHDL(code)).map:
