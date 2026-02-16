@@ -31,7 +31,7 @@ jobs:
           path: out
 
       - name: Checking
-        run: ./millw checkFormat
+        run: ./millw __.checkFormat
 
   test:
     needs: [prepare]
@@ -46,7 +46,7 @@ jobs:
           path: out
 
       - name: Testing
-        run: ./millw test
+        run: ./millw __.test
 
   package:
     needs: [prepare]
@@ -60,7 +60,7 @@ jobs:
           path: out
 
       - name: Packaging
-        run: ./millw assembly
+        run: ./millw cli.assembly
 
         # --- Artifact uploading ---
 

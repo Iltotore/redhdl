@@ -11,3 +11,4 @@ enum TypeFailure:
   case UnknownComponent(name: Identifier)
   case UnusedPort(identifier: PortIdentifier)
   case PortAlreadyDeclared(identifier: Identifier)
+  case UnknownEntrypoint(identifier: Identifier)

@@ -206,15 +206,3 @@ object SchematicGenerator:
 
       case (struct, _, _, _) => Loop.done(struct)
     .now
-
-  def saveSchematic(structure: Structure, path: String): Unit < (SchematicGeneration & Sync) =
-    BinaryNbtHelpers.write(Structure.saveSponge(structure), path, CompressionType.GZIP): Unit
-
-  def generateAndSaveStructure(
-      graph: Graph,
-      layers: Chunk[Chunk[NodeId]],
-      channels: Chunk[Channel],
-      path: String
-  ): Unit < (SchematicGeneration & Sync) =
-    generateStructure(graph, layers, channels)
-      .map(saveSchematic(_, path))
