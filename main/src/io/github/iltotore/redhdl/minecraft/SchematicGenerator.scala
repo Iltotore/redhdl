@@ -75,17 +75,16 @@ object SchematicGenerator:
       .map(to.withStructure(at, _))
 
   def putGate(tpe: NodeType, structure: Structure, at: BlockPos): Structure < SchematicGeneration = direct:
-    println(s"Put gate $tpe at $at")
     tpe match
       case NodeType.Input(name) =>
         pasteGateSchematic(tpe.toGateType, structure, at)
           .now
           .withBlock(at + (0, 2, 3), Block.Sign(Block.Facing.North, name.value))
       case NodeType.Output(name) =>
-        pasteGateSchematic(tpe.toGateType, structure.withBlock(at, Block("minecraft:blue_wool")), at)
+        pasteGateSchematic(tpe.toGateType, structure, at)
           .now
           .withBlock(at + (0, 2, 0), Block.Sign(Block.Facing.South, name.value))
-      case _ => pasteGateSchematic(tpe.toGateType, structure.withBlock(at, Block("minecraft:blue_wool")), at).now
+      case _ => pasteGateSchematic(tpe.toGateType, structure, at).now
 
   def getTrackZ(channel: Channel, id: NetId): Int =
     Loop(channel.tracks, 1):
@@ -105,8 +104,6 @@ object SchematicGenerator:
 
     val trackZ = getTrackZ(channel, id)
 
-    println(s"Put net $id at $at, track: ${channel.getNetTrack(id)}, Z: $trackZ")
-
     val endZ = getChannelSize(channel) - 1
     val startX = net.start.value * columnSpacing
     val endX = net.end.value * columnSpacing
@@ -122,16 +119,16 @@ object SchematicGenerator:
           // Bridge
           .withCircuitLineX(at + (startX, 2, trackZ), at.x + endX)
           // Bridge start repeater
-          .withBlock(at + (startX, 0, trackZ - 2), Block("minecraft:orange_wool"))
+          .withBlock(at + (startX, 0, trackZ - 2), Block("minecraft:white_wool"))
           .withBlock(at + (startX, 1, trackZ - 2), Block("minecraft:repeater"), overrideBlock = true)
           // Bridge end repeater
-          .withBlock(at + (endX, 0, trackZ + 2), Block("minecraft:green_wool"))
+          .withBlock(at + (endX, 0, trackZ + 2), Block("minecraft:white_wool"))
           .withBlock(at + (endX, 1, trackZ + 2), Block("minecraft:repeater"), overrideBlock = true)
           // Bridge start
-          .withBlock(at + (startX, 1, trackZ - 1), Block("minecraft:magenta_wool"), overrideBlock = true)
+          .withBlock(at + (startX, 1, trackZ - 1), Block("minecraft:white_wool"), overrideBlock = true)
           .withBlock(at + (startX, 2, trackZ - 1), Block("minecraft:redstone_wire"))
           // and end
-          .withBlock(at + (endX, 1, trackZ + 1), Block("minecraft:black_wool"), overrideBlock = true)
+          .withBlock(at + (endX, 1, trackZ + 1), Block("minecraft:white_wool"), overrideBlock = true)
           .withBlock(at + (endX, 2, trackZ + 1), Block("minecraft:redstone_wire"))
 
       net.outerNet match
@@ -143,7 +140,6 @@ object SchematicGenerator:
 
   def putLayer(layer: Chunk[NodeType], structure: Structure, at: BlockPos): Structure < SchematicGeneration = direct:
     val layerSize = layer.map(_.sizeX).sum
-    println(s"Layer at: $at, size: $layerSize")
 
     Loop(structure, layer, 0):
       case (struct, nodeType +: tail, x) =>
@@ -154,10 +150,9 @@ object SchematicGenerator:
           else
             Range(0, sizeX).foldLeft(struct)((s, pin) =>
               val realX = (x + pin) * columnSpacing
-              println(s"Layer place at X=$x (true pos: $realX)")
 
               s
-                .withBlock(at + (realX, 0, 0), Block("minecraft:yellow_wool"))
+                .withBlock(at + (realX, 0, 0), Block("minecraft:white_wool"))
                 .withBlock(at + (realX, 1, 0), Block("minecraft:repeater"))
             )
 
@@ -165,7 +160,7 @@ object SchematicGenerator:
           if nodeType.isOutput then withInputs
           else
             withInputs
-              .withBlock(at + (x * columnSpacing, 0, gateSizeZ + 1), Block("minecraft:yellow_wool"))
+              .withBlock(at + (x * columnSpacing, 0, gateSizeZ + 1), Block("minecraft:white_wool"))
               .withBlock(at + (x * columnSpacing, 1, gateSizeZ + 1), Block("minecraft:repeater"))
 
         putGate(nodeType, withIO, at + (x * columnSpacing, 0, 1))
@@ -181,8 +176,6 @@ object SchematicGenerator:
         else putNet(channel, NetId.assume(id), net, struct, at, 0)
 
   def generateStructure(graph: Graph, layers: Chunk[Chunk[NodeId]], channels: Chunk[Channel]): Structure < SchematicGeneration = direct:
-    println("TEST")
-
     val emptyStructure = Structure.empty(getNeededRegion(graph, layers, channels).now)
     val withFirstLayer = putLayer(layers(0).map(id => graph.getNode(id).tpe), emptyStructure, BlockPos(0, 0, 0)).now
 

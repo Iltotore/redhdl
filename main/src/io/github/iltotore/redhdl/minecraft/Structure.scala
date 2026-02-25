@@ -40,11 +40,10 @@ case class Structure(dimensions: BlockPos, var blocks: Chunk[Block]):
       this
     else
       val existing = this(position)
-      if !overrideBlock && existing.id != "minecraft:air" && existing.id != block.id then
-        println(s"Warning: [${block.id}] overwriting [${existing.id}] at ($position)")
-        this
-      else
+      if overrideBlock || existing.id == "minecraft:air" then
         this.copy(blocks = blocks.updated(positionToIndex(position), block))
+      else
+        this
 
   def withLineX(positionA: BlockPos, to: Int, block: Block, overrideBlock: Boolean = false): Structure =
     val step = if to >= positionA.x then 1 else -1
