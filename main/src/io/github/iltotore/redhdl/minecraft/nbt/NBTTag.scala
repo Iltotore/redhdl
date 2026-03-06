@@ -1,15 +1,15 @@
 package io.github.iltotore.redhdl.minecraft.nbt
 
-import java.io.DataOutput
-import kyo.Chunk
 import java.io.DataInput
-import scala.collection.mutable
-import java.io.InputStream
-import java.util.zip.GZIPInputStream
 import java.io.DataInputStream
-import java.io.OutputStream
-import java.util.zip.GZIPOutputStream
+import java.io.DataOutput
 import java.io.DataOutputStream
+import java.io.InputStream
+import java.io.OutputStream
+import java.util.zip.GZIPInputStream
+import java.util.zip.GZIPOutputStream
+import kyo.Chunk
+import scala.collection.mutable
 
 enum NBT:
   case ByteTag(value: Byte)
@@ -48,7 +48,7 @@ enum NBT:
       stream.writeInt(values.size)
       values.foreach(stream.writeByte(_))
     case StringTag(value) => stream.writeUTF(value)
-    case ListTag(values)  =>
+    case ListTag(values) =>
       stream.writeByte(values.headOption.fold(0)(_.id))
       stream.writeInt(values.size)
       values.foreach(_.writeRaw(stream))
@@ -64,60 +64,60 @@ enum NBT:
 
   def asByte: Byte = this match
     case ByteTag(value) => value
-    case _ => throw ClassCastException("NBT is not Byte")
-  
+    case _              => throw ClassCastException("NBT is not Byte")
+
   def asBoolean: Boolean = this match
     case ByteTag(value) => value != 0
-    case _ => throw ClassCastException("NBT is not Boolean")
-  
+    case _              => throw ClassCastException("NBT is not Boolean")
+
   def asShort: Short = this match
     case ShortTag(value) => value
-    case _ => throw ClassCastException("NBT is not Short")
+    case _               => throw ClassCastException("NBT is not Short")
 
   def asInt: Int = this match
     case IntTag(value) => value
-    case _ => throw ClassCastException("NBT is not Int")
-  
+    case _             => throw ClassCastException("NBT is not Int")
+
   def asLong: Long = this match
     case LongTag(value) => value
-    case _ => throw ClassCastException("NBT is not Long")
-  
+    case _              => throw ClassCastException("NBT is not Long")
+
   def asFloat: Float = this match
     case FloatTag(value) => value
-    case _ => throw ClassCastException("NBT is not Float")
-  
+    case _               => throw ClassCastException("NBT is not Float")
+
   def asDouble: Double = this match
     case DoubleTag(value) => value
-    case _ => throw ClassCastException("NBT is not Double")
-  
+    case _                => throw ClassCastException("NBT is not Double")
+
   def asByteArray: Chunk[Byte] = this match
     case ByteArrayTag(values) => values
-    case _ => throw ClassCastException("NBT is not ByteArray")
-  
+    case _                    => throw ClassCastException("NBT is not ByteArray")
+
   def asString: String = this match
     case StringTag(value) => value
-    case _ => throw ClassCastException("NBT is not String")
+    case _                => throw ClassCastException("NBT is not String")
 
   def asList: Chunk[NBT] = this match
     case ListTag(values) => values
-    case _ => throw ClassCastException("NBT is not a List")
+    case _               => throw ClassCastException("NBT is not a List")
 
-  def asCompound: Map[String, NBT]= this match
+  def asCompound: Map[String, NBT] = this match
     case CompoundTag(fields) => fields
-    case _ => throw ClassCastException("NBT is not a Compound")
-  
+    case _                   => throw ClassCastException("NBT is not a Compound")
+
   def asIntArray: Chunk[Int] = this match
     case IntArrayTag(values) => values
-    case _ => throw ClassCastException("NBT is not an IntArray")
-  
+    case _                   => throw ClassCastException("NBT is not an IntArray")
+
   def asLongArray: Chunk[Long] = this match
     case LongArrayTag(values) => values
-    case _ => throw ClassCastException("NBT is not a LongArray")
+    case _                    => throw ClassCastException("NBT is not a LongArray")
 
 object NBT:
 
   def boolean(value: Boolean): ByteTag = ByteTag(if value then 0 else 1)
-  
+
   def list(tags: NBT*): ListTag = ListTag(Chunk.from(tags))
 
   def compound(entries: (String, NBT)*): CompoundTag = CompoundTag(entries.toMap)
@@ -163,7 +163,7 @@ object NBT:
     case 12 =>
       val size = stream.readInt()
       LongArrayTag(Chunk.range(0, size).map(_ => stream.readLong()))
-    
+
     case _ => throw AssertionError(s"Unexpected NBT id: $id")
 
   def intArray(values: Int*): IntArrayTag = IntArrayTag(Chunk.from(values))

@@ -1,10 +1,10 @@
 package io.github.iltotore.redhdl.minecraft
 
+import io.github.iltotore.redhdl.minecraft.nbt.NBT
 import java.io.IOException
 import kyo.*
 import scala.jdk.CollectionConverters.ListHasAsScala
 import scala.jdk.CollectionConverters.SetHasAsScala
-import io.github.iltotore.redhdl.minecraft.nbt.NBT
 
 case class Structure(dimensions: BlockPos, var blocks: Chunk[Block]):
 
@@ -174,4 +174,3 @@ object Structure:
         )
       )
     )
-    

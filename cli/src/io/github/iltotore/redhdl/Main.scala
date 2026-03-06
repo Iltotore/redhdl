@@ -5,10 +5,10 @@ import com.monovore.decline.*
 import io.github.iltotore.iron.decline.given
 import io.github.iltotore.redhdl.ast.Identifier
 import io.github.iltotore.redhdl.minecraft.Structure
-import java.io.File
-import kyo.*
 import io.github.iltotore.redhdl.minecraft.nbt.NBT
+import java.io.File
 import java.io.FileOutputStream
+import kyo.*
 
 given Argument[Path] = Argument.from("path")(str => Path(str).validNel)
 
@@ -23,6 +23,7 @@ def programName(path: Path, extension: String): String = path.path match
 object Main extends KyoCommandApp(
       name = "redhdl",
       header = "Compile RedHDL file to schematic",
+      version = "1.0.0",
       main =
         (
           Opts.argument[Path]("path"),

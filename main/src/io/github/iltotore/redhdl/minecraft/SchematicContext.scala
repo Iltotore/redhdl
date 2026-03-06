@@ -1,13 +1,13 @@
 package io.github.iltotore.redhdl.minecraft
 
 import io.github.iltotore.redhdl.graph.NodeType
+import io.github.iltotore.redhdl.minecraft.nbt.NBT
 import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Files
 import java.util.function.Supplier
 import kyo.*
 import scala.util.Using
-import io.github.iltotore.redhdl.minecraft.nbt.NBT
 
 case class SchematicContext(schematics: Map[GateType, Structure]):
 

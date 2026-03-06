@@ -25,13 +25,13 @@ class KyoCommandApp(command: Command[Unit < (Async & Abort[String | Throwable] &
 
   run:
     command.parse(PlatformApp.ambientArgs getOrElse args, sys.env) match
-      case Left(help)     => Console.printLineErr(
-        s"""Errors:
-          |- ${help.errors.mkString("\n- ")}
-          |
-          |Usages:
-          |- ${help.usage.map(usage => s"${help.prefix.toList.mkString("|")} $usage").mkString("\n- ")}
-          |
-          |${help.body.mkString("\n\n")}""".stripMargin
-      )
+      case Left(help) => Console.printLineErr(
+          s"""Errors:
+             |- ${help.errors.mkString("\n- ")}
+             |
+             |Usages:
+             |- ${help.usage.map(usage => s"${help.prefix.toList.mkString("|")} $usage").mkString("\n- ")}
+             |
+             |${help.body.mkString("\n\n")}""".stripMargin
+        )
       case Right(program) => Abort.recover[String](Console.printLineErr)(program)

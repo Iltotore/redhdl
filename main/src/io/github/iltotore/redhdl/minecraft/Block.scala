@@ -1,11 +1,11 @@
 package io.github.iltotore.redhdl.minecraft
 
+import io.github.iltotore.redhdl.minecraft.nbt.NBT
 import kyo.Absent
 import kyo.Chunk
 import kyo.Maybe
 import kyo.Present
 import scala.jdk.CollectionConverters.SetHasAsScala
-import io.github.iltotore.redhdl.minecraft.nbt.NBT
 
 case class Block(id: String, attributes: Map[String, String] = Map.empty, entity: Maybe[BlockEntity] = Absent):
 
