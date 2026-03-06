@@ -27,8 +27,7 @@ object main extends BaseModule:
     mvn"com.github.iltotore.kyo::kyo-core:${versions.kyo}",
     mvn"com.github.iltotore.kyo::kyo-direct:${versions.kyo}",
     mvn"com.github.iltotore.kyo::kyo-parse:${versions.kyo}",
-    mvn"io.github.iltotore::iron:${versions.iron}",
-    mvn"com.github.Iltotore:NBT:6.1.1"
+    mvn"io.github.iltotore::iron:${versions.iron}"
   )
 
   object test extends ScalaTests, TestModule.Utest:

@@ -1,7 +1,5 @@
 package io.github.iltotore.redhdl.minecraft
 
-import io.github.ensgijs.nbt.io.BinaryNbtHelpers
-import io.github.ensgijs.nbt.io.CompressionType
 import io.github.iltotore.redhdl.graph.Channel
 import io.github.iltotore.redhdl.graph.Graph
 import io.github.iltotore.redhdl.graph.Net

@@ -1,14 +1,11 @@
 package io.github.iltotore.redhdl.minecraft
 
-import io.github.ensgijs.nbt.tag.CompoundTag
-import io.github.ensgijs.nbt.tag.ListTag
-import io.github.ensgijs.nbt.tag.StringTag
-import io.github.ensgijs.nbt.tag.Tag
 import kyo.Absent
 import kyo.Chunk
 import kyo.Maybe
 import kyo.Present
 import scala.jdk.CollectionConverters.SetHasAsScala
+import io.github.iltotore.redhdl.minecraft.nbt.NBT
 
 case class Block(id: String, attributes: Map[String, String] = Map.empty, entity: Maybe[BlockEntity] = Absent):
 
@@ -22,7 +19,7 @@ case class Block(id: String, attributes: Map[String, String] = Map.empty, entity
 
     s"$id$attributesStr"
 
-  def withData(data: CompoundTag): Block =
+  def withData(data: NBT.CompoundTag): Block =
     this.copy(entity = entity.map(_.copy(data = data)))
 
 object Block:
@@ -41,17 +38,16 @@ object Block:
 
   def Sign(rotation: Facing, messages: String*): Block =
     val messageLines = messages ++ Chunk.fill(math.max(0, 4 - messages.length))("")
-    val frontMessagesTag = ListTag(classOf[StringTag])
-    for msg <- messageLines do frontMessagesTag.addString(msg)
-
-    val frontText = CompoundTag()
-    frontText.put("messages", frontMessagesTag)
-
-    val data = CompoundTag()
-    data.put("front_text", frontText)
 
     Block(
       id = "minecraft:oak_sign",
       attributes = Map("rotation" -> rotation.toRotation),
-      entity = Present(BlockEntity("minecraft:sign", data))
+      entity = Present(BlockEntity(
+        id = "minecraft:sign",
+        data = NBT.compound(
+          "front_text" -> NBT.compound(
+            "messages" -> NBT.list(messageLines.map(NBT.StringTag.apply)*)
+          )
+        )
+      ))
     )

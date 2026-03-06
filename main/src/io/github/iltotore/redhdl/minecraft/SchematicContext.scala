@@ -1,7 +1,5 @@
 package io.github.iltotore.redhdl.minecraft
 
-import io.github.ensgijs.nbt.io.BinaryNbtHelpers
-import io.github.ensgijs.nbt.io.CompressionType
 import io.github.iltotore.redhdl.graph.NodeType
 import java.io.IOException
 import java.io.InputStream
@@ -9,6 +7,7 @@ import java.nio.file.Files
 import java.util.function.Supplier
 import kyo.*
 import scala.util.Using
+import io.github.iltotore.redhdl.minecraft.nbt.NBT
 
 case class SchematicContext(schematics: Map[GateType, Structure]):
 
@@ -29,7 +28,7 @@ object SchematicContext:
               tpe,
               Structure.loadSponge(
                 path = s"internal:$resourcePath",
-                root = BinaryNbtHelpers.read(input, CompressionType.GZIP).getTagAutoCast
+                root = NBT.readGZipped(input)._2
               ).now
             )
         )
