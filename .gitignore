@@ -6,3 +6,8 @@
 node_modules
 out
 *.iml
+
+# ignore all schematic files everywhere
+*.schem
+# except the ones in main/resources/gates
+!main/resources/gates/*.schem
