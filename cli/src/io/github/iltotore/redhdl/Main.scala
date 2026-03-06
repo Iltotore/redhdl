@@ -2,12 +2,12 @@ package io.github.iltotore.redhdl
 
 import cats.syntax.all.*
 import com.monovore.decline.*
-import io.github.ensgijs.nbt.io.BinaryNbtHelpers
-import io.github.ensgijs.nbt.io.CompressionType
 import io.github.iltotore.iron.decline.given
 import io.github.iltotore.redhdl.ast.Identifier
 import io.github.iltotore.redhdl.minecraft.Structure
+import io.github.iltotore.redhdl.minecraft.nbt.NBT
 import java.io.File
+import java.io.FileOutputStream
 import kyo.*
 
 given Argument[Path] = Argument.from("path")(str => Path(str).validNel)
@@ -23,6 +23,7 @@ def programName(path: Path, extension: String): String = path.path match
 object Main extends KyoCommandApp(
       name = "redhdl",
       header = "Compile RedHDL file to schematic",
+      version = "1.0.0",
       main =
         (
           Opts.argument[Path]("path"),
@@ -72,6 +73,6 @@ object Main extends KyoCommandApp(
               case Result.Panic(throwable) => Abort.panic(throwable)
 
             tag = Structure.saveSponge(structure)
-          yield BinaryNbtHelpers.write(tag, output.path.mkString(File.separator), CompressionType.GZIP): Unit
+          yield tag.writeGZipped("", FileOutputStream(output.path.mkString(File.separator))): Unit
         )
     )

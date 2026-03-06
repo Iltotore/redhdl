@@ -1,8 +1,7 @@
 package io.github.iltotore.redhdl.minecraft
 
-import io.github.ensgijs.nbt.io.BinaryNbtHelpers
-import io.github.ensgijs.nbt.io.CompressionType
 import io.github.iltotore.redhdl.graph.NodeType
+import io.github.iltotore.redhdl.minecraft.nbt.NBT
 import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Files
@@ -29,7 +28,7 @@ object SchematicContext:
               tpe,
               Structure.loadSponge(
                 path = s"internal:$resourcePath",
-                root = BinaryNbtHelpers.read(input, CompressionType.GZIP).getTagAutoCast
+                root = NBT.readGZipped(input)._2
               ).now
             )
         )
