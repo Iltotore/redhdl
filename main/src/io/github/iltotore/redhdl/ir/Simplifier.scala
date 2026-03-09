@@ -8,12 +8,12 @@ import kyo.Chunk
 
 object Simplifier:
 
-  def simplifyComponent(component: ExpandedComponent): SimplifiedComponent =
+  def simplifyComponent(optimize: Boolean)(component: ExpandedComponent): SimplifiedComponent =
     val simplifiedOutputs = component.io.outputs.map((out, _) =>
       val expr = component.body.collectFirst { case (i, expr) if i == out => expr }
         .getOrElse(throw AssertionError(s"Unassigned output: $out"))
 
-      (out, simplifyExpr(component, expr))
+      (out, simplifyExpr(component, expr, optimize))
     )
 
     SimplifiedComponent(Chunk.from(component.io.inputs.keys), simplifiedOutputs)
@@ -32,18 +32,19 @@ object Simplifier:
     case Expr.Xor(Expr.LBool(false), right) => right
     case _                                  => expr
 
-  def simplifyExpr(component: ExpandedComponent, expr: Expr): Expr =
+  def simplifyExpr(component: ExpandedComponent, expr: Expr, optimize: Boolean): Expr =
     val simplified = expr match
       case Expr.LBool(value) => Expr.LBool(value)
       case Expr.InputCall(identifier) => identifier match
           case PortIdentifier.Sub(subComponent, name) => throw AssertionError(s"Subcomponent port in expanded component: $subComponent.$name")
           case PortIdentifier.Main(name) =>
             if component.io.inputs.contains(name) then Expr.InputCall(PortIdentifier.Main(name))
-            else simplifyExpr(component, component.getExpr(name))
+            else simplifyExpr(component, component.getExpr(name), optimize)
 
-      case Expr.Not(expr)        => Expr.Not(simplifyExpr(component, expr))
-      case Expr.Or(left, right)  => Expr.Or(simplifyExpr(component, left), simplifyExpr(component, right))
-      case Expr.And(left, right) => Expr.And(simplifyExpr(component, left), simplifyExpr(component, right))
-      case Expr.Xor(left, right) => Expr.Xor(simplifyExpr(component, left), simplifyExpr(component, right))
+      case Expr.Not(expr)        => Expr.Not(simplifyExpr(component, expr, optimize))
+      case Expr.Or(left, right)  => Expr.Or(simplifyExpr(component, left, optimize), simplifyExpr(component, right, optimize))
+      case Expr.And(left, right) => Expr.And(simplifyExpr(component, left, optimize), simplifyExpr(component, right, optimize))
+      case Expr.Xor(left, right) => Expr.Xor(simplifyExpr(component, left, optimize), simplifyExpr(component, right, optimize))
 
-    optimizeSimplified(simplified)
+    if optimize then optimizeSimplified(simplified)
+    else simplified
