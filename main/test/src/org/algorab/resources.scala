@@ -61,7 +61,7 @@ object resources:
                   case (n, _) if n.value.equalsIgnoreCase(name.value) => n
                 .getOrElse(Identifier("Main"))
 
-              val initialGraph = compileToGraph(componentName, components)
+              val initialGraph = compileToGraph(componentName, components, true)
               val initialLayers = GraphRouter.getLayers(initialGraph)
               GraphRouter.addRelays(initialGraph, initialLayers): Unit
         )

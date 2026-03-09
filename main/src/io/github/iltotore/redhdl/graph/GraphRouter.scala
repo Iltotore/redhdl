@@ -1,5 +1,6 @@
 package io.github.iltotore.redhdl.graph
 
+import io.github.iltotore.redhdl.CompilationContext.optimize
 import kyo.Absent
 import kyo.Chunk
 import kyo.Maybe
@@ -164,7 +165,7 @@ object GraphRouter:
     - Track 0 (car Net1.left > Track0.end): [Net0, Net1] (end = 2)
     - Track 1: [Net2] (end = 3)
    */
-  def assignTrack(channel: Channel, netId: NetId): Channel =
+  def assignTrack(optimize: Boolean)(channel: Channel, netId: NetId): Channel =
     val net = channel.nets(netId.value)
     val availableTrack = channel
       .tracks
@@ -178,7 +179,7 @@ object GraphRouter:
           .flatMap((id, _) => channel.getNetTrack(id))
           .exists(destTrackId => trackId <= destTrackId.value)
 
-        (channel.getTrackEnd(track) < net.left || hasSameStart) && !isTrackBeforeDest
+        (channel.getTrackEnd(track) < net.left || (hasSameStart && optimize)) && !isTrackBeforeDest
       )
     availableTrack match
       case None =>
@@ -222,7 +223,7 @@ object GraphRouter:
 
     result.to(Chunk)
 
-  def routeChannel(channel: Channel): Channel =
+  def routeChannel(channel: Channel, optimize: Boolean): Channel =
     val (withoutCycle, _) = Chunk
       .range(NetId(0), NetId.assume(channel.nets.size))
       .foldLeft((channel, Set.empty[NetId])):
@@ -232,17 +233,17 @@ object GraphRouter:
     val sortedNets = sortNets(withoutCycle)
 
     val sortedNetsThenOuters = sortedNets ++ Chunk.range(NetId.assume(sortedNets.size), NetId.assume(withoutCycle.nets.size))
-    sortedNetsThenOuters.foldLeft(withoutCycle)(assignTrack)
+    sortedNetsThenOuters.foldLeft(withoutCycle)(assignTrack(optimize))
 
   // https://rtldigitaldesign.blogspot.com/2019/07/left-edge-channel-algorithm-for.html
   @nowarn("msg=exhaustive")
-  def routeGraph(graph: Graph, layers: Chunk[Chunk[NodeId]]): Chunk[Channel] =
+  def routeGraph(graph: Graph, layers: Chunk[Chunk[NodeId]], optimize: Boolean): Chunk[Channel] =
     val xPos = getXPositions(graph, layers)
     Chunk.from(
       layers.sliding(2).map:
         case Chunk(from, to) =>
           val channel = createChannel(graph, xPos, from, to)
-          routeChannel(channel)
+          routeChannel(channel, optimize)
     )
 
 /*
