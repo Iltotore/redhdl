@@ -18,7 +18,7 @@ object GraphRouter:
    * @param graph the graph to sort
    * @return the graph's topological layers
    */
-  def getLayers(graph: Graph): Chunk[Chunk[NodeId]] =
+  def getLayers(graph: Graph, alignOutputs: Boolean): Chunk[Chunk[NodeId]] =
     val inputDegree = mutable.Map[NodeId, Int]().withDefaultValue(0)
 
     for (node, id) <- graph.nodes.zipWithIndex do
@@ -39,14 +39,17 @@ object GraphRouter:
       for id <- zeroInputDegree do
         for output <- graph.getOutputs(id) do
           inputDegree(output.id) -= 1
-          if (inputDegree(output.id) == 0) nextZero += output.id
+          if inputDegree(output.id) == 0 && !(graph.isOutputNode(output.id) && alignOutputs) then nextZero += output.id
 
         inputDegree.remove(id)
 
       zeroInputDegree = nextZero.toSet
 
     if inputDegree.nonEmpty then
-      throw new AssertionError("Graph contains a cycle")
+      if inputDegree.forall((id, _) => graph.isOutputNode(id)) && alignOutputs then
+        layers += Chunk.from(inputDegree.keys)
+      else
+        throw new AssertionError("Graph contains a cycle")
 
     Chunk.from(layers)
 

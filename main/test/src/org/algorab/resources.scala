@@ -16,13 +16,15 @@ import scala.io.Source
 import utest.asserts.Util
 import io.github.iltotore.redhdl.graph.GraphRouter
 import io.github.iltotore.redhdl.ast.Identifier
+import io.github.iltotore.redhdl.CompilationContext.alignOutputs
 
 object resources:
 
   private val defaultContext: CompilationContext = CompilationContext(
     fileName = Absent,
     entrypoint = Absent,
-    optimize = true
+    optimize = true,
+    alignOutputs = true
   )
 
   def runAssert[A](context: CompilationContext)(body: A < Compilation)(using Frame): Unit =
@@ -53,18 +55,19 @@ object resources:
 
   def runGoldenTest(name: Identifier, code: String): Unit =
     runAssert(defaultContext)(
-      parse(code)
-        .map(typecheck)
-        .map(components =>
-              val componentName =
-                components.collectFirst:
-                  case (n, _) if n.value.equalsIgnoreCase(name.value) => n
-                .getOrElse(Identifier("Main"))
+      for
+        components <- parse(code).map(typecheck)
+        optimize <- CompilationContext.optimize
+        alignOutputs <- CompilationContext.alignOutputs
+      yield
+        val componentName =
+          components.collectFirst:
+            case (n, _) if n.value.equalsIgnoreCase(name.value) => n
+          .getOrElse(Identifier("Main"))
 
-              val initialGraph = compileToGraph(componentName, components, true)
-              val initialLayers = GraphRouter.getLayers(initialGraph)
-              GraphRouter.addRelays(initialGraph, initialLayers): Unit
-        )
+        val initialGraph = compileToGraph(componentName, components, true)
+        val initialLayers = GraphRouter.getLayers(initialGraph, alignOutputs)
+        GraphRouter.addRelays(initialGraph, initialLayers): Unit
     )
 
   transparent inline def goldenTests(): Unit =

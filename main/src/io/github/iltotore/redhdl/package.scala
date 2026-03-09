@@ -52,6 +52,7 @@ def compileRedHDL(code: String): Structure < Compilation =
     fileName <- CompilationContext.fileName
     entrypoint <- CompilationContext.entrypoint
     optimize <- CompilationContext.optimize
+    alignOutputs <- CompilationContext.alignOutputs
     components <- parse(code).map(typecheck)
 
     resolvedEntrypoint =
@@ -64,7 +65,7 @@ def compileRedHDL(code: String): Structure < Compilation =
       else Compilation.emitAndAbort(TypeFailure.UnknownEntrypoint(resolvedEntrypoint))
 
     initialGraph = compileToGraph(resolvedEntrypoint, components, optimize)
-    initialLayers = GraphRouter.getLayers(initialGraph)
+    initialLayers = GraphRouter.getLayers(initialGraph, alignOutputs)
     (graph, layers) = GraphRouter.addRelays(initialGraph, initialLayers)
     schemContext <- Abort.recover(Compilation.emitAndAbort)(SchematicContext.load(GateType.values))
   yield compileToSchem(graph, layers, schemContext, optimize)
