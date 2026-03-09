@@ -21,6 +21,10 @@ case class Graph(inputs: Map[Identifier, NodeId], nodes: Chunk[Node]):
 
   def getOutputs(id: NodeId): Chunk[NodeOutput] = getNode(id).outputs
 
+  def isOutputNode(id: NodeId): Boolean = getNode(id).tpe match
+    case NodeType.Output(_) => true
+    case _                  => false
+
 object Graph:
 
   def fromInputs(inputs: Chunk[Identifier]): Graph =

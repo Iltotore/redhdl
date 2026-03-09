@@ -6,7 +6,8 @@ import kyo.*
 case class CompilationContext(
     fileName: Maybe[String],
     entrypoint: Maybe[Identifier],
-    optimize: Boolean
+    optimize: Boolean,
+    alignOutputs: Boolean
 )
 
 object CompilationContext:
@@ -16,3 +17,5 @@ object CompilationContext:
   def entrypoint: Maybe[Identifier] < Compilation = Env.use(_.entrypoint)
 
   def optimize: Boolean < Compilation = Env.use(_.optimize)
+
+  def alignOutputs: Boolean < Compilation = Env.use(_.alignOutputs)

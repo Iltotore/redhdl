@@ -29,8 +29,9 @@ object Main extends KyoCommandApp(
           Opts.argument[Path]("path"),
           Opts.option[Path]("output", "Path to write the schematic to", "o").orAbsent,
           Opts.option[Identifier]("entrypoint", "Program entrypoint", "e").orAbsent,
-          Opts.flag("no-optimize", "Disable optimizations").orTrue
-        ).mapN((input, outputOpt, entrypoint, optimize) =>
+          Opts.flag("no-optimize", "Disable optimizations").orTrue,
+          Opts.flag("no-align", "Disable output nodes alignment").orTrue
+        ).mapN((input, outputOpt, entrypoint, optimize, alignOutputs) =>
           for
             exists <- input.exists
             _ <-
@@ -54,7 +55,8 @@ object Main extends KyoCommandApp(
             context = CompilationContext(
               fileName = Present(name),
               entrypoint = entrypoint,
-              optimize = optimize
+              optimize = optimize,
+              alignOutputs = alignOutputs
             )
 
             _ <- Console.printLine(s"Compiling ${input.path.mkString(File.separator)} to ${output.path.mkString(File.separator)}")
