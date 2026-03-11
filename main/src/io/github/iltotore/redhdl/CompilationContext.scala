@@ -1,12 +1,14 @@
 package io.github.iltotore.redhdl
 
 import io.github.iltotore.redhdl.ast.Identifier
+import io.github.iltotore.redhdl.minecraft.Block
 import kyo.*
 
 case class CompilationContext(
     fileName: Maybe[String],
     entrypoint: Maybe[Identifier],
-    optimize: Boolean
+    optimize: Boolean,
+    palette: Chunk[Block]
 )
 
 object CompilationContext:
@@ -16,3 +18,5 @@ object CompilationContext:
   def entrypoint: Maybe[Identifier] < Compilation = Env.use(_.entrypoint)
 
   def optimize: Boolean < Compilation = Env.use(_.optimize)
+
+  def palette: Chunk[Block] < Compilation = Env.use(_.palette)

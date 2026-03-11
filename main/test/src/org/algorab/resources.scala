@@ -16,13 +16,15 @@ import scala.io.Source
 import utest.asserts.Util
 import io.github.iltotore.redhdl.graph.GraphRouter
 import io.github.iltotore.redhdl.ast.Identifier
+import io.github.iltotore.redhdl.minecraft.Palette
 
 object resources:
 
   private val defaultContext: CompilationContext = CompilationContext(
     fileName = Absent,
     entrypoint = Absent,
-    optimize = true
+    optimize = true,
+    palette = Palette.default
   )
 
   def runAssert[A](context: CompilationContext)(body: A < Compilation)(using Frame): Unit =
