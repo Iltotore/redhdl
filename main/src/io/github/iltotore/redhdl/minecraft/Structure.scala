@@ -68,6 +68,18 @@ case class Structure(dimensions: BlockPos, var blocks: Chunk[Block]):
 
     positions.foldLeft(this)((result, pos) => result.withBlock(position + pos, structure(pos)))
 
+  /**
+   * Produce a copy of this structure where every white wool block is replaced
+   * with the supplied colour.  This is used when pasting gate schematics so that
+   * the graphic can be tinted according to the surrounding wire palette.
+   */
+  def recolor(color: Block): Structure =
+    val newBlocks = blocks.map(b =>
+      if b.id == "minecraft:white_wool" then color
+      else b
+    )
+    this.copy(blocks = newBlocks)
+
   def toPaletteAndData: (Map[String, Int], Chunk[Byte]) =
     val (_, finalPalette, finalData) = blocks.foldLeft((0.toByte, Map.empty[String, Int], Chunk.empty[Byte])):
       case ((nextId, palette, data), block) =>

@@ -4,6 +4,7 @@ import cats.syntax.all.*
 import com.monovore.decline.*
 import io.github.iltotore.iron.decline.given
 import io.github.iltotore.redhdl.ast.Identifier
+import io.github.iltotore.redhdl.minecraft.Palette
 import io.github.iltotore.redhdl.minecraft.Structure
 import io.github.iltotore.redhdl.minecraft.nbt.NBT
 import java.io.File
@@ -30,8 +31,9 @@ object Main extends KyoCommandApp(
           Opts.option[Path]("output", "Path to write the schematic to", "o").orAbsent,
           Opts.option[Identifier]("entrypoint", "Program entrypoint", "e").orAbsent,
           Opts.flag("no-optimize", "Disable optimizations").orTrue,
-          Opts.flag("no-align", "Disable output nodes alignment").orTrue
-        ).mapN((input, outputOpt, entrypoint, optimize, alignOutputs) =>
+          Opts.flag("no-align", "Disable output nodes alignment").orTrue,
+          Opts.options[String]("palette", "Block id to use for wires or alias (rainbow)").orEmpty
+        ).mapN((input, outputOpt, entrypoint, optimize, alignOutputs, paletteStrs) =>
           for
             exists <- input.exists
             _ <-
@@ -56,7 +58,8 @@ object Main extends KyoCommandApp(
               fileName = Present(name),
               entrypoint = entrypoint,
               optimize = optimize,
-              alignOutputs = alignOutputs
+              alignOutputs = alignOutputs,
+              palette = Palette.fromStrings(Chunk.from(paletteStrs))
             )
 
             _ <- Console.printLine(s"Compiling ${input.path.mkString(File.separator)} to ${output.path.mkString(File.separator)}")

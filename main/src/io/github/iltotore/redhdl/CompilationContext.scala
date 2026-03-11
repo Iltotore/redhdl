@@ -1,13 +1,15 @@
 package io.github.iltotore.redhdl
 
 import io.github.iltotore.redhdl.ast.Identifier
+import io.github.iltotore.redhdl.minecraft.Block
 import kyo.*
 
 case class CompilationContext(
     fileName: Maybe[String],
     entrypoint: Maybe[Identifier],
     optimize: Boolean,
-    alignOutputs: Boolean
+    alignOutputs: Boolean,
+    palette: Chunk[Block]
 )
 
 object CompilationContext:
@@ -19,3 +21,5 @@ object CompilationContext:
   def optimize: Boolean < Compilation = Env.use(_.optimize)
 
   def alignOutputs: Boolean < Compilation = Env.use(_.alignOutputs)
+
+  def palette: Chunk[Block] < Compilation = Env.use(_.palette)

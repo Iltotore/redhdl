@@ -16,6 +16,7 @@ import scala.io.Source
 import utest.asserts.Util
 import io.github.iltotore.redhdl.graph.GraphRouter
 import io.github.iltotore.redhdl.ast.Identifier
+import io.github.iltotore.redhdl.minecraft.Palette
 import io.github.iltotore.redhdl.CompilationContext.alignOutputs
 
 object resources:
@@ -24,7 +25,8 @@ object resources:
     fileName = Absent,
     entrypoint = Absent,
     optimize = true,
-    alignOutputs = true
+    alignOutputs = true,
+    palette = Palette.default
   )
 
   def runAssert[A](context: CompilationContext)(body: A < Compilation)(using Frame): Unit =

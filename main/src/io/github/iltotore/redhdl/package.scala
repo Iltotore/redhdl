@@ -67,7 +67,9 @@ def compileRedHDL(code: String): Structure < Compilation =
     initialGraph = compileToGraph(resolvedEntrypoint, components, optimize)
     initialLayers = GraphRouter.getLayers(initialGraph, alignOutputs)
     (graph, layers) = GraphRouter.addRelays(initialGraph, initialLayers)
-    schemContext <- Abort.recover(Compilation.emitAndAbort)(SchematicContext.load(GateType.values))
+    // load schematics and propagate current palette and optimize configuration
+    pal <- CompilationContext.palette
+    schemContext <- Abort.recover(Compilation.emitAndAbort)(SchematicContext.load(GateType.values, pal))
   yield compileToSchem(graph, layers, schemContext, optimize)
 
 def idToChar(id: NodeId): Char =

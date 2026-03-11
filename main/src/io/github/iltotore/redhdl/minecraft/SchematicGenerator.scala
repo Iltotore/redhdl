@@ -6,6 +6,7 @@ import io.github.iltotore.redhdl.graph.Net
 import io.github.iltotore.redhdl.graph.NetId
 import io.github.iltotore.redhdl.graph.NodeId
 import io.github.iltotore.redhdl.graph.NodeType
+import io.github.iltotore.redhdl.graph.PinX
 import io.github.iltotore.redhdl.graph.TrackId
 import java.nio.file.Files
 import java.nio.file.Path as JPath
@@ -20,9 +21,10 @@ object SchematicGenerator:
   private val trackSpacing: Int = 4
 
   extension (structure: Structure)
-    def withCircuitLineX(position: BlockPos, to: Int): Structure =
+
+    def withCircuitLineX(position: BlockPos, to: Int, color: Block): Structure =
       val base = structure
-        .withLineX(position, to, Block("minecraft:white_wool"))
+        .withLineX(position, to, color)
         .withLineX(position + (0, 1, 0), to, Block("minecraft:redstone_wire"))
 
       val (repeaterPositions, repeaterFacing) =
@@ -37,9 +39,9 @@ object SchematicGenerator:
         )
       )
 
-    def withCircuitLineZ(position: BlockPos, to: Int): Structure =
+    def withCircuitLineZ(position: BlockPos, to: Int, color: Block): Structure =
       val base = structure
-        .withLineZ(position, to, Block("minecraft:white_wool"))
+        .withLineZ(position, to, color)
         .withLineZ(position + (0, 1, 0), to, Block("minecraft:redstone_wire"))
 
       val (repeaterPositions, repeaterFacing) =
@@ -67,22 +69,31 @@ object SchematicGenerator:
 
     BlockPos(sizeX, sizeY, sizeZ)
 
-  def pasteGateSchematic(tpe: GateType, to: Structure, at: BlockPos): Structure < SchematicGeneration =
+  /**
+   * Paste a gate schematic into a structure.  Optionally recolour the schematic
+   * using the provided block, which is usually derived from the first net on the
+   * left of the gate (pin index).
+   */
+  def pasteGateSchematic(tpe: GateType, to: Structure, at: BlockPos, color: Option[Block] = None): Structure < SchematicGeneration =
     SchematicContext
       .getSchematic(tpe)
-      .map(to.withStructure(at, _))
+      .map: schem =>
+        val used = color match
+          case Some(c) => schem.recolor(c)
+          case None    => schem
+        to.withStructure(at, used)
 
-  def putGate(tpe: NodeType, structure: Structure, at: BlockPos): Structure < SchematicGeneration = direct:
+  def putGate(tpe: NodeType, structure: Structure, at: BlockPos, color: Option[Block]): Structure < SchematicGeneration = direct:
     tpe match
       case NodeType.Input(name) =>
-        pasteGateSchematic(tpe.toGateType, structure, at)
+        pasteGateSchematic(tpe.toGateType, structure, at, color)
           .now
           .withBlock(at + (0, 2, 3), Block.Sign(Block.Facing.North, name.value))
       case NodeType.Output(name) =>
-        pasteGateSchematic(tpe.toGateType, structure, at)
+        pasteGateSchematic(tpe.toGateType, structure, at, color)
           .now
           .withBlock(at + (0, 2, 0), Block.Sign(Block.Facing.South, name.value))
-      case _ => pasteGateSchematic(tpe.toGateType, structure, at).now
+      case _ => pasteGateSchematic(tpe.toGateType, structure, at, color).now
 
   def getTrackZ(channel: Channel, id: NetId): Int =
     Loop(channel.tracks, 1):
@@ -98,8 +109,7 @@ object SchematicGenerator:
       case _ => throw AssertionError(s"Not track for net $id")
     .eval
 
-  def putNet(channel: Channel, id: NetId, net: Net, structure: Structure, at: BlockPos, startZ: Int): Structure < SchematicGeneration = direct:
-
+  def putNet(channel: Channel, id: NetId, net: Net, structure: Structure, at: BlockPos, startZ: Int, color: Block): Structure < SchematicGeneration =
     val trackZ = getTrackZ(channel, id)
 
     val endZ = getChannelSize(channel) - 1
@@ -107,75 +117,88 @@ object SchematicGenerator:
     val endX = net.end.value * columnSpacing
 
     if startX == endX then
-      structure
-        .withCircuitLineZ(at + (startX, 0, startZ), at.z + endZ)
+      structure.withCircuitLineZ(at + (startX, 0, startZ), at.z + endZ, color)
     else
       val withoutLineAfterBridge =
         structure
           // Line before bridge
-          .withCircuitLineZ(at + (startX, 0, startZ), at.z + math.max(0, trackZ - 3))
+          .withCircuitLineZ(at + (startX, 0, startZ), at.z + math.max(0, trackZ - 3), color)
           // Bridge
-          .withCircuitLineX(at + (startX, 2, trackZ), at.x + endX)
+          .withCircuitLineX(at + (startX, 2, trackZ), at.x + endX, color)
           // Bridge start repeater
-          .withBlock(at + (startX, 0, trackZ - 2), Block("minecraft:white_wool"))
+          .withBlock(at + (startX, 0, trackZ - 2), color)
           .withBlock(at + (startX, 1, trackZ - 2), Block("minecraft:repeater"), overrideBlock = true)
           // Bridge end repeater
-          .withBlock(at + (endX, 0, trackZ + 2), Block("minecraft:white_wool"))
+          .withBlock(at + (endX, 0, trackZ + 2), color)
           .withBlock(at + (endX, 1, trackZ + 2), Block("minecraft:repeater"), overrideBlock = true)
           // Bridge start
-          .withBlock(at + (startX, 1, trackZ - 1), Block("minecraft:white_wool"), overrideBlock = true)
+          .withBlock(at + (startX, 1, trackZ - 1), color, overrideBlock = true)
           .withBlock(at + (startX, 2, trackZ - 1), Block("minecraft:redstone_wire"))
           // and end
-          .withBlock(at + (endX, 1, trackZ + 1), Block("minecraft:white_wool"), overrideBlock = true)
+          .withBlock(at + (endX, 1, trackZ + 1), color, overrideBlock = true)
           .withBlock(at + (endX, 2, trackZ + 1), Block("minecraft:redstone_wire"))
 
       net.outerNet match
-        case Absent => withoutLineAfterBridge
-            .withCircuitLineZ(at + (endX, 0, math.min(endZ, trackZ + 3)), at.z + endZ)
+        case Absent =>
+          withoutLineAfterBridge
+            .withCircuitLineZ(at + (endX, 0, math.min(endZ, trackZ + 3)), at.z + endZ, color)
         case Present(outerId) =>
           val outerNet = channel.getNet(outerId)
-          putNet(channel, outerId, outerNet, withoutLineAfterBridge, at, trackZ + 3).now
+          putNet(channel, outerId, outerNet, withoutLineAfterBridge, at, trackZ + 3, color)
 
-  def putLayer(layer: Chunk[NodeType], structure: Structure, at: BlockPos): Structure < SchematicGeneration = direct:
+  def putLayer(
+      layer: Chunk[NodeType],
+      structure: Structure,
+      at: BlockPos,
+      incoming: Option[Channel],
+      outgoing: Option[Channel]
+  ): Structure < SchematicGeneration =
     val layerSize = layer.map(_.sizeX).sum
 
     Loop(structure, layer, 0):
       case (struct, nodeType +: tail, x) =>
-        val sizeX = nodeType.sizeX
+        for
+          color <- SchematicContext.getPaletteBlock(PinX.assume(x))
+          withInputs =
+            if nodeType.isInput then struct
+            else
+              Range(0, nodeType.sizeX).foldLeft(struct)((s, pin) =>
+                val realX = (x + pin) * columnSpacing
+                s
+                  .withBlock(at + (realX, 0, 0), color, overrideBlock = true)
+                  .withBlock(at + (realX, 1, 0), Block("minecraft:repeater"))
+              )
 
-        val withInputs =
-          if nodeType.isInput then struct
-          else
-            Range(0, sizeX).foldLeft(struct)((s, pin) =>
-              val realX = (x + pin) * columnSpacing
+          withIO =
+            if nodeType.isOutput then withInputs
+            else
+              withInputs
+                .withBlock(at + (x * columnSpacing, 0, gateSizeZ + 1), color)
+                .withBlock(at + (x * columnSpacing, 1, gateSizeZ + 1), Block("minecraft:repeater"))
 
-              s
-                .withBlock(at + (realX, 0, 0), Block("minecraft:white_wool"))
-                .withBlock(at + (realX, 1, 0), Block("minecraft:repeater"))
-            )
-
-        val withIO =
-          if nodeType.isOutput then withInputs
-          else
-            withInputs
-              .withBlock(at + (x * columnSpacing, 0, gateSizeZ + 1), Block("minecraft:white_wool"))
-              .withBlock(at + (x * columnSpacing, 1, gateSizeZ + 1), Block("minecraft:repeater"))
-
-        putGate(nodeType, withIO, at + (x * columnSpacing, 0, 1))
-          .map(Loop.continue(_, tail, x + sizeX))
+          updated <- putGate(
+            nodeType,
+            withIO,
+            at + (x * columnSpacing, 0, 1),
+            Some(color)
+          )
+        yield Loop.continue(updated, tail, x + nodeType.sizeX)
 
       case (struct, _, _) => Loop.done(struct)
-    .now
 
   def putChannel(channel: Channel, structure: Structure, at: BlockPos): Structure < SchematicGeneration =
     Kyo.foldLeft(channel.nets.zipWithIndex)(structure):
       case (struct, (net, id)) =>
         if channel.isOuterColumn(net.start) then struct
-        else putNet(channel, NetId.assume(id), net, struct, at, 0)
+        else
+          SchematicContext.getPaletteBlock(net.start).map(
+            putNet(channel, NetId.assume(id), net, struct, at, 0, _)
+          )
 
   def generateStructure(graph: Graph, layers: Chunk[Chunk[NodeId]], channels: Chunk[Channel]): Structure < SchematicGeneration = direct:
     val emptyStructure = Structure.empty(getNeededRegion(graph, layers, channels).now)
-    val withFirstLayer = putLayer(layers(0).map(id => graph.getNode(id).tpe), emptyStructure, BlockPos(0, 0, 0)).now
+    val firstOutgoing = channels.headOption
+    val withFirstLayer = putLayer(layers(0).map(id => graph.getNode(id).tpe), emptyStructure, BlockPos(0, 0, 0), None, firstOutgoing).now
 
     Loop(withFirstLayer, layers.tail, channels, layerSizeZ):
       case (struct, layer +: remainingLayers, channel +: remainingChannels, z) =>
@@ -187,7 +210,10 @@ object SchematicGenerator:
             if channelSize <= 0 then struct
             else putChannel(channel, struct, BlockPos(0, 0, z)).now
 
-          val withChannelAndLayer = putLayer(layer.map(id => graph.getNode(id).tpe), withChannel, BlockPos(0, 0, layerStart)).now
+          val nextOutgoing = remainingChannels.drop(1).headOption
+
+          val withChannelAndLayer =
+            putLayer(layer.map(id => graph.getNode(id).tpe), withChannel, BlockPos(0, 0, layerStart), Some(channel), nextOutgoing).now
           Loop.continue[Structure, Chunk[Chunk[NodeId.T]], Chunk[Channel], Int, Structure](
             withChannelAndLayer,
             remainingLayers,

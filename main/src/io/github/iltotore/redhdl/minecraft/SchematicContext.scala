@@ -1,6 +1,7 @@
 package io.github.iltotore.redhdl.minecraft
 
 import io.github.iltotore.redhdl.graph.NodeType
+import io.github.iltotore.redhdl.graph.PinX
 import io.github.iltotore.redhdl.minecraft.nbt.NBT
 import java.io.IOException
 import java.io.InputStream
@@ -9,13 +10,17 @@ import java.util.function.Supplier
 import kyo.*
 import scala.util.Using
 
-case class SchematicContext(schematics: Map[GateType, Structure]):
+case class SchematicContext(schematics: Map[GateType, Structure], palette: Chunk[Block]):
 
   def getSchematic(tpe: GateType): Maybe[Structure] = Maybe.fromOption(schematics.get(tpe))
 
 object SchematicContext:
 
-  def load(types: Chunk[GateType]): SchematicContext < (Abort[SchematicFailure] & Sync) =
+  /**
+   * Load all internal schematics and build the context.  A palette of blocks can be
+   * provided to colour wires; if nothing is supplied the default palette is used.
+   */
+  def load(types: Chunk[GateType], palette: Chunk[Block] = Palette.default): SchematicContext < (Abort[SchematicFailure] & Sync) =
     Kyo.foreach(types)(tpe =>
       val resourcePath = s"/gates/${tpe.resourceName}.schem"
       val resourceInput = getClass.getResourceAsStream(resourcePath)
@@ -32,7 +37,13 @@ object SchematicContext:
               ).now
             )
         )
-    ).map(pairs => SchematicContext(pairs.toMap))
+    ).map(pairs => SchematicContext(pairs.toMap, palette))
+
+  /**
+   * Getter pour la palette actuelle dans l'environnement.
+   */
+  def paletteBlocks: Chunk[Block] < SchematicGeneration =
+    Env.use[SchematicContext](_.palette)
 
   def getSchematic(tpe: GateType): Structure < SchematicGeneration =
     Env.use(ctx =>
@@ -43,3 +54,14 @@ object SchematicContext:
 
   def getDimensions(tpe: GateType): BlockPos < SchematicGeneration =
     getSchematic(tpe).map(_.dimensions)
+
+  /**
+   * Choose a block from the context palette using only the horizontal pin index.
+   * When there are more pins than colours we wrap around the list.
+   */
+  def getPaletteBlock(pin: PinX): Block < SchematicGeneration =
+    Env.use(ctx =>
+      ctx.palette match
+        case Chunk() => Palette.default.head
+        case palette => palette((pin.value % palette.size).toInt)
+    )
