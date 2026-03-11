@@ -17,7 +17,7 @@ import utest.asserts.Util
 import io.github.iltotore.redhdl.graph.GraphRouter
 import io.github.iltotore.redhdl.ast.Identifier
 import io.github.iltotore.redhdl.minecraft.Palette
-import io.github.iltotore.redhdl.CompilationContext.alignOutputs
+import io.github.iltotore.redhdl.minecraft.RepeaterDelay
 
 object resources:
 
@@ -26,7 +26,8 @@ object resources:
     entrypoint = Absent,
     optimize = true,
     alignOutputs = true,
-    palette = Palette.default
+    palette = Palette.default,
+    repeaterDelay = RepeaterDelay(1)
   )
 
   def runAssert[A](context: CompilationContext)(body: A < Compilation)(using Frame): Unit =

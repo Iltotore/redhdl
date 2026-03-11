@@ -22,36 +22,36 @@ object SchematicGenerator:
 
   extension (structure: Structure)
 
-    def withCircuitLineX(position: BlockPos, to: Int, color: Block): Structure =
+    def withCircuitLineX(position: BlockPos, to: Int, color: Block, delay: RepeaterDelay): Structure =
       val base = structure
         .withLineX(position, to, color)
-        .withLineX(position + (0, 1, 0), to, Block("minecraft:redstone_wire"))
+        .withLineX(position + (0, 1, 0), to, Block.RedstoneWire)
 
       val (repeaterPositions, repeaterFacing) =
-        if position.x < to then ((position.x + 13) to to by 14, "west")
-        else ((position.x - 13) to to by -14, "east")
+        if position.x < to then ((position.x + 13) to to by 14, Block.Facing.West)
+        else ((position.x - 13) to to by -14, Block.Facing.East)
 
       repeaterPositions.foldLeft(base)((acc, x) =>
         acc.withBlock(
           position = BlockPos(x, position.y + 1, position.z),
-          block = Block.withAttributes("minecraft:repeater")("facing" -> repeaterFacing),
+          block = Block.Repeater(delay, repeaterFacing),
           overrideBlock = true
         )
       )
 
-    def withCircuitLineZ(position: BlockPos, to: Int, color: Block): Structure =
+    def withCircuitLineZ(position: BlockPos, to: Int, color: Block, delay: RepeaterDelay): Structure =
       val base = structure
         .withLineZ(position, to, color)
-        .withLineZ(position + (0, 1, 0), to, Block("minecraft:redstone_wire"))
+        .withLineZ(position + (0, 1, 0), to, Block.RedstoneWire)
 
       val (repeaterPositions, repeaterFacing) =
-        if position.z < to then ((position.z + 15) to to by 15, "north")
-        else ((position.z - 15) to to by -15, "south")
+        if position.z < to then ((position.z + 15) to to by 15, Block.Facing.North)
+        else ((position.z - 15) to to by -15, Block.Facing.South)
 
       repeaterPositions.foldLeft(base)((acc, z) =>
         acc.withBlock(
           position = BlockPos(position.x, position.y + 1, z),
-          block = Block.withAttributes("minecraft:repeater")("facing" -> repeaterFacing),
+          block = Block.Repeater(delay, repeaterFacing),
           overrideBlock = true
         )
       )
@@ -88,11 +88,11 @@ object SchematicGenerator:
       case NodeType.Input(name) =>
         pasteGateSchematic(tpe.toGateType, structure, at, color)
           .now
-          .withBlock(at + (0, 2, 3), Block.Sign(Block.Facing.North, name.value))
+          .withBlock(at + (0, 2, 3), Block.Sign(Block.Rotation.North, name.value))
       case NodeType.Output(name) =>
         pasteGateSchematic(tpe.toGateType, structure, at, color)
           .now
-          .withBlock(at + (0, 2, 0), Block.Sign(Block.Facing.South, name.value))
+          .withBlock(at + (0, 2, 0), Block.Sign(Block.Rotation.South, name.value))
       case _ => pasteGateSchematic(tpe.toGateType, structure, at, color).now
 
   def getTrackZ(channel: Channel, id: NetId): Int =
@@ -110,41 +110,43 @@ object SchematicGenerator:
     .eval
 
   def putNet(channel: Channel, id: NetId, net: Net, structure: Structure, at: BlockPos, startZ: Int, color: Block): Structure < SchematicGeneration =
-    val trackZ = getTrackZ(channel, id)
+    SchematicContext.getRepeaterDelay.map(delay =>
+      val trackZ = getTrackZ(channel, id)
 
-    val endZ = getChannelSize(channel) - 1
-    val startX = net.start.value * columnSpacing
-    val endX = net.end.value * columnSpacing
+      val endZ = getChannelSize(channel) - 1
+      val startX = net.start.value * columnSpacing
+      val endX = net.end.value * columnSpacing
 
-    if startX == endX then
-      structure.withCircuitLineZ(at + (startX, 0, startZ), at.z + endZ, color)
-    else
-      val withoutLineAfterBridge =
-        structure
-          // Line before bridge
-          .withCircuitLineZ(at + (startX, 0, startZ), at.z + math.max(0, trackZ - 3), color)
-          // Bridge
-          .withCircuitLineX(at + (startX, 2, trackZ), at.x + endX, color)
-          // Bridge start repeater
-          .withBlock(at + (startX, 0, trackZ - 2), color)
-          .withBlock(at + (startX, 1, trackZ - 2), Block("minecraft:repeater"), overrideBlock = true)
-          // Bridge end repeater
-          .withBlock(at + (endX, 0, trackZ + 2), color)
-          .withBlock(at + (endX, 1, trackZ + 2), Block("minecraft:repeater"), overrideBlock = true)
-          // Bridge start
-          .withBlock(at + (startX, 1, trackZ - 1), color, overrideBlock = true)
-          .withBlock(at + (startX, 2, trackZ - 1), Block("minecraft:redstone_wire"))
-          // and end
-          .withBlock(at + (endX, 1, trackZ + 1), color, overrideBlock = true)
-          .withBlock(at + (endX, 2, trackZ + 1), Block("minecraft:redstone_wire"))
+      if startX == endX then
+        structure.withCircuitLineZ(at + (startX, 0, startZ), at.z + endZ, color, delay)
+      else
+        val withoutLineAfterBridge =
+          structure
+            // Line before bridge
+            .withCircuitLineZ(at + (startX, 0, startZ), at.z + math.max(0, trackZ - 3), color, delay)
+            // Bridge
+            .withCircuitLineX(at + (startX, 2, trackZ), at.x + endX, color, delay)
+            // Bridge start repeater
+            .withBlock(at + (startX, 0, trackZ - 2), color)
+            .withBlock(at + (startX, 1, trackZ - 2), Block.Repeater(delay), overrideBlock = true)
+            // Bridge end repeater
+            .withBlock(at + (endX, 0, trackZ + 2), color)
+            .withBlock(at + (endX, 1, trackZ + 2), Block.Repeater(delay), overrideBlock = true)
+            // Bridge start
+            .withBlock(at + (startX, 1, trackZ - 1), color, overrideBlock = true)
+            .withBlock(at + (startX, 2, trackZ - 1), Block.RedstoneWire)
+            // and end
+            .withBlock(at + (endX, 1, trackZ + 1), color, overrideBlock = true)
+            .withBlock(at + (endX, 2, trackZ + 1), Block.RedstoneWire)
 
-      net.outerNet match
-        case Absent =>
-          withoutLineAfterBridge
-            .withCircuitLineZ(at + (endX, 0, math.min(endZ, trackZ + 3)), at.z + endZ, color)
-        case Present(outerId) =>
-          val outerNet = channel.getNet(outerId)
-          putNet(channel, outerId, outerNet, withoutLineAfterBridge, at, trackZ + 3, color)
+        net.outerNet match
+          case Absent =>
+            withoutLineAfterBridge
+              .withCircuitLineZ(at + (endX, 0, math.min(endZ, trackZ + 3)), at.z + endZ, color, delay)
+          case Present(outerId) =>
+            val outerNet = channel.getNet(outerId)
+            putNet(channel, outerId, outerNet, withoutLineAfterBridge, at, trackZ + 3, color)
+    )
 
   def putLayer(
       layer: Chunk[NodeType],
@@ -159,6 +161,7 @@ object SchematicGenerator:
       case (struct, nodeType +: tail, x) =>
         for
           color <- SchematicContext.getPaletteBlock(PinX.assume(x))
+          delay <- SchematicContext.getRepeaterDelay
           withInputs =
             if nodeType.isInput then struct
             else
@@ -166,7 +169,7 @@ object SchematicGenerator:
                 val realX = (x + pin) * columnSpacing
                 s
                   .withBlock(at + (realX, 0, 0), color, overrideBlock = true)
-                  .withBlock(at + (realX, 1, 0), Block("minecraft:repeater"))
+                  .withBlock(at + (realX, 1, 0), Block.Repeater(delay))
               )
 
           withIO =
@@ -174,7 +177,7 @@ object SchematicGenerator:
             else
               withInputs
                 .withBlock(at + (x * columnSpacing, 0, gateSizeZ + 1), color)
-                .withBlock(at + (x * columnSpacing, 1, gateSizeZ + 1), Block("minecraft:repeater"))
+                .withBlock(at + (x * columnSpacing, 1, gateSizeZ + 1), Block.Repeater(delay))
 
           updated <- putGate(
             nodeType,
