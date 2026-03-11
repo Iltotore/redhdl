@@ -77,12 +77,11 @@ object SchematicGenerator:
   def pasteGateSchematic(tpe: GateType, to: Structure, at: BlockPos, color: Option[Block] = None): Structure < SchematicGeneration =
     SchematicContext
       .getSchematic(tpe)
-      .map:
-        schem =>
-          val used = color match
-            case Some(c) => schem.recolor(c)
-            case None    => schem
-          to.withStructure(at, used)
+      .map: schem =>
+        val used = color match
+          case Some(c) => schem.recolor(c)
+          case None    => schem
+        to.withStructure(at, used)
 
   def putGate(tpe: NodeType, structure: Structure, at: BlockPos, color: Option[Block]): Structure < SchematicGeneration = direct:
     tpe match
@@ -109,7 +108,6 @@ object SchematicGenerator:
 
       case _ => throw AssertionError(s"Not track for net $id")
     .eval
-
 
   def putNet(channel: Channel, id: NetId, net: Net, structure: Structure, at: BlockPos, startZ: Int, color: Block): Structure < SchematicGeneration =
     val trackZ = getTrackZ(channel, id)
@@ -184,8 +182,7 @@ object SchematicGenerator:
             at + (x * columnSpacing, 0, 1),
             Some(color)
           )
-        yield
-          Loop.continue(updated, tail, x + nodeType.sizeX)
+        yield Loop.continue(updated, tail, x + nodeType.sizeX)
 
       case (struct, _, _) => Loop.done(struct)
 
