@@ -7,13 +7,14 @@ import kyo.AllowUnsafe.embrace.danger
 import io.github.iltotore.redhdl.graph.PinX
 import kyo.*
 import utest.*
+import io.github.iltotore.redhdl.minecraft.RepeaterDelay
 
 object PaletteTests extends TestSuite {
   import kyo.AllowUnsafe.embrace.danger
   val tests = Tests:
 
     test("default palette"):
-      val ctx = SchematicContext(Map.empty, Palette.default)
+      val ctx = SchematicContext(Map.empty, Palette.default, RepeaterDelay(1))
       // run the effect to obtain a block
       val block = Sync.Unsafe.evalOrThrow(
         SchematicContext.getPaletteBlock(PinX(0))
@@ -26,7 +27,7 @@ object PaletteTests extends TestSuite {
 
     test("cycle multiple"):
       val colors = Chunk(Block("a"), Block("b"), Block("c"))
-      val ctx = SchematicContext(Map.empty, colors)
+      val ctx = SchematicContext(Map.empty, colors, RepeaterDelay(1))
       val r0 = Sync.Unsafe.evalOrThrow(
         SchematicContext.getPaletteBlock(PinX(0))
           .handle(
@@ -61,7 +62,7 @@ object PaletteTests extends TestSuite {
     test("gate schematic recoloured"):
       // create a trivial schematic containing a single white wool block
       val single = Structure(BlockPos(1, 1, 1), Chunk(Block("minecraft:white_wool")))
-      val ctx = SchematicContext(Map(GateType.Not -> single), Palette.default)
+      val ctx = SchematicContext(Map(GateType.Not -> single), Palette.default, RepeaterDelay(1))
 
       val colored = Sync.Unsafe.evalOrThrow(
         SchematicGenerator.pasteGateSchematic(
@@ -80,7 +81,7 @@ object PaletteTests extends TestSuite {
     test("input gate recoloured via outgoing channel"):
       // one-input schematic
       val single = Structure(BlockPos(1, 1, 1), Chunk(Block("minecraft:white_wool")))
-      val ctx = SchematicContext(Map(GateType.Input -> single), Palette.default)
+      val ctx = SchematicContext(Map(GateType.Input -> single), Palette.default, RepeaterDelay(1))
 
       // channel with a net starting at position 0; this will be used to colour
       // the input gate that resides at x=0 in the first layer

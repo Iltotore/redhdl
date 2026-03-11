@@ -10,7 +10,11 @@ import java.util.function.Supplier
 import kyo.*
 import scala.util.Using
 
-case class SchematicContext(schematics: Map[GateType, Structure], palette: Chunk[Block]):
+case class SchematicContext(
+    schematics: Map[GateType, Structure],
+    palette: Chunk[Block],
+    repeaterDelay: RepeaterDelay
+):
 
   def getSchematic(tpe: GateType): Maybe[Structure] = Maybe.fromOption(schematics.get(tpe))
 
@@ -20,7 +24,11 @@ object SchematicContext:
    * Load all internal schematics and build the context.  A palette of blocks can be
    * provided to colour wires; if nothing is supplied the default palette is used.
    */
-  def load(types: Chunk[GateType], palette: Chunk[Block] = Palette.default): SchematicContext < (Abort[SchematicFailure] & Sync) =
+  def load(
+      types: Chunk[GateType],
+      palette: Chunk[Block] = Palette.default,
+      repeaterDelay: RepeaterDelay = RepeaterDelay(1)
+  ): SchematicContext < (Abort[SchematicFailure] & Sync) =
     Kyo.foreach(types)(tpe =>
       val resourcePath = s"/gates/${tpe.resourceName}.schem"
       val resourceInput = getClass.getResourceAsStream(resourcePath)
@@ -37,7 +45,7 @@ object SchematicContext:
               ).now
             )
         )
-    ).map(pairs => SchematicContext(pairs.toMap, palette))
+    ).map(pairs => SchematicContext(pairs.toMap, palette, repeaterDelay))
 
   /**
    * Getter pour la palette actuelle dans l'environnement.
@@ -65,3 +73,6 @@ object SchematicContext:
         case Chunk() => Palette.default.head
         case palette => palette((pin.value % palette.size).toInt)
     )
+
+  def getRepeaterDelay: RepeaterDelay < SchematicGeneration =
+    Env.use(_.repeaterDelay)

@@ -29,14 +29,19 @@ object Block:
 
   val Air: Block = Block("minecraft:air")
 
-  enum Facing derives CanEqual:
+  enum Rotation derives CanEqual:
     case North, South
 
     def toRotation: String = this match
       case North => "8"
       case South => "0"
 
-  def Sign(rotation: Facing, messages: String*): Block =
+  enum Facing derives CanEqual:
+    case North, South, East, West
+
+    def toFacing: String = this.toString.toLowerCase
+
+  def Sign(rotation: Rotation, messages: String*): Block =
     val messageLines = messages ++ Chunk.fill(math.max(0, 4 - messages.length))("")
 
     Block(
@@ -51,3 +56,11 @@ object Block:
         )
       ))
     )
+
+  def Repeater(delay: RepeaterDelay, facing: Facing = Facing.North): Block =
+    withAttributes("minecraft:repeater")(
+      "delay" -> delay.toString,
+      "facing" -> facing.toFacing
+    )
+
+  val RedstoneWire: Block = Block("minecraft:redstone_wire")

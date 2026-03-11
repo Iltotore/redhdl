@@ -2,6 +2,7 @@ package io.github.iltotore.redhdl
 
 import io.github.iltotore.redhdl.ast.Identifier
 import io.github.iltotore.redhdl.minecraft.Block
+import io.github.iltotore.redhdl.minecraft.RepeaterDelay
 import kyo.*
 
 case class CompilationContext(
@@ -9,7 +10,8 @@ case class CompilationContext(
     entrypoint: Maybe[Identifier],
     optimize: Boolean,
     alignOutputs: Boolean,
-    palette: Chunk[Block]
+    palette: Chunk[Block],
+    repeaterDelay: RepeaterDelay
 )
 
 object CompilationContext:
@@ -23,3 +25,5 @@ object CompilationContext:
   def alignOutputs: Boolean < Compilation = Env.use(_.alignOutputs)
 
   def palette: Chunk[Block] < Compilation = Env.use(_.palette)
+
+  def repeaterDelay: RepeaterDelay < Compilation = Env.use(_.repeaterDelay)
