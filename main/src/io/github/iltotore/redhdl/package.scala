@@ -37,20 +37,22 @@ def parse(code: String): Program < Compilation =
 def typecheck(program: Program): Map[Identifier, ComponentInfo] < Compilation =
   Typing.runGlobal(TypeChecker.checkProgram(program))
 
-def compileToGraph(entrypoint: Identifier, components: Map[Identifier, ComponentInfo]): Graph =
+def compileToGraph(entrypoint: Identifier, components: Map[Identifier, ComponentInfo], optimize: Boolean): Graph =
   Expander
     .expandComponent(components(entrypoint))
-    .map(Simplifier.simplifyComponent)
+    .map(Simplifier.simplifyComponent(optimize))
     .map(GraphBuilding.buildGraph)
     .handle(Expansion.run(components)).eval
 
-def compileToSchem(graph: Graph, layers: Chunk[Chunk[NodeId]], context: SchematicContext): Structure < Compilation =
-  SchematicGeneration.run(context)(SchematicGenerator.generateStructure(graph, layers, GraphRouter.routeGraph(graph, layers)))
+def compileToSchem(graph: Graph, layers: Chunk[Chunk[NodeId]], context: SchematicContext, optimize: Boolean): Structure < Compilation =
+  SchematicGeneration.run(context)(SchematicGenerator.generateStructure(graph, layers, GraphRouter.routeGraph(graph, layers, optimize)))
 
 def compileRedHDL(code: String): Structure < Compilation =
   for
     fileName <- CompilationContext.fileName
     entrypoint <- CompilationContext.entrypoint
+    optimize <- CompilationContext.optimize
+    alignOutputs <- CompilationContext.alignOutputs
     components <- parse(code).map(typecheck)
 
     resolvedEntrypoint =
@@ -62,13 +64,13 @@ def compileRedHDL(code: String): Structure < Compilation =
       if components.contains(resolvedEntrypoint) then Kyo.unit
       else Compilation.emitAndAbort(TypeFailure.UnknownEntrypoint(resolvedEntrypoint))
 
-    initialGraph = compileToGraph(resolvedEntrypoint, components)
-    initialLayers = GraphRouter.getLayers(initialGraph)
+    initialGraph = compileToGraph(resolvedEntrypoint, components, optimize)
+    initialLayers = GraphRouter.getLayers(initialGraph, alignOutputs)
     (graph, layers) = GraphRouter.addRelays(initialGraph, initialLayers)
-    // load schematics and propagate current palette configuration
+    // load schematics and propagate current palette and optimize configuration
     pal <- CompilationContext.palette
     schemContext <- Abort.recover(Compilation.emitAndAbort)(SchematicContext.load(GateType.values, pal))
-  yield compileToSchem(graph, layers, schemContext)
+  yield compileToSchem(graph, layers, schemContext, optimize)
 
 def idToChar(id: NodeId): Char =
   if id.value >= 26 then ('a' + id.value - 26).toChar

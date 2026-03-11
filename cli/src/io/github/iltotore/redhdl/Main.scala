@@ -31,8 +31,9 @@ object Main extends KyoCommandApp(
           Opts.option[Path]("output", "Path to write the schematic to", "o").orAbsent,
           Opts.option[Identifier]("entrypoint", "Program entrypoint", "e").orAbsent,
           Opts.flag("no-optimize", "Disable optimizations").orTrue,
+          Opts.flag("no-align", "Disable output nodes alignment").orTrue,
           Opts.options[String]("palette", "Block id to use for wires or alias (rainbow)").orEmpty
-        ).mapN((input, outputOpt, entrypoint, optimize, paletteStrs) =>
+        ).mapN((input, outputOpt, entrypoint, optimize, alignOutputs, paletteStrs) =>
           for
             exists <- input.exists
             _ <-
@@ -57,6 +58,7 @@ object Main extends KyoCommandApp(
               fileName = Present(name),
               entrypoint = entrypoint,
               optimize = optimize,
+              alignOutputs = alignOutputs,
               palette = Palette.fromStrings(Chunk.from(paletteStrs))
             )
 
