@@ -12,16 +12,57 @@ import java.io.File
 import java.io.FileOutputStream
 import kyo.*
 
+/**
+ * Decline [[Argument]] instance for filesystem [[Path]] values.
+ *
+ * Accepts any non-empty string and wraps it in a [[Path]] without additional
+ * validation; path existence checks are performed at runtime.
+ */
 given Argument[Path] = Argument.from("path")(str => Path(str).validNel)
 
 extension [A](opts: Opts[A])
+  /**
+   * Makes an option optional, returning [[Absent]] when the flag is not provided.
+   *
+   * @return An [[Opts]] that yields [[Present]] when the user supplies the flag
+   *         and [[Absent]] otherwise.
+   */
   def orAbsent: Opts[Maybe[A]] = opts.map(Present.apply).withDefault(Absent)
 
+/**
+ * Derive a program name from a file path by stripping the directory part and
+ * the given extension.
+ *
+ * @param path      The file path to extract the name from.
+ * @param extension The file extension to strip (without the leading dot).
+ * @return The base name of the file, without directory or extension.
+ * @throws AssertionError if `path` represents an empty sequence of segments.
+ */
 def programName(path: Path, extension: String): String = path.path match
   case _ :+ s"$name.$extension" => name
   case _ :+ name                => name
   case _                        => throw AssertionError("Empty path")
 
+/**
+ * Main entry point for the `redhdl` command-line tool.
+ *
+ * Compiles a RedHDL source file to a Minecraft Sponge schematic (`.schem`).
+ *
+ * ==Usage==
+ * {{{
+ *   redhdl <path> [options]
+ * }}}
+ *
+ * ==Options==
+ *   - `path`               – Path to the `.red` source file (required).
+ *   - `--output / -o`      – Destination path for the schematic (default: `<name>.schem`).
+ *   - `--entrypoint / -e`  – Component to use as the circuit entry point.
+ *   - `--no-optimize`      – Disable constant-folding and algebraic optimisations.
+ *   - `--no-align`         – Disable vertical alignment of output nodes.
+ *   - `--palette`          – Block ID(s) for wires; the special value `rainbow` expands to the
+ *                            full set of coloured wools.
+ *   - `--repeater-delay`   – Redstone repeater delay (1–4, default 1).
+ */
 object Main extends KyoCommandApp(
       name = "redhdl",
       header = "Compile RedHDL file to schematic",
