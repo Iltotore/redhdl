@@ -9,10 +9,26 @@ import kyo.*
 import utest.*
 import io.github.iltotore.redhdl.minecraft.RepeaterDelay
 
+/**
+ * Unit tests for the palette and schematic-colouring subsystem.
+ *
+ * These tests verify:
+ *   - That the default palette is returned from [[SchematicContext.getPaletteBlock]]
+ *     when no explicit palette is configured.
+ *   - That palette entries cycle correctly when the pin index exceeds the palette size.
+ *   - That the `"rainbow"` alias in [[Palette.fromStrings]] expands to the full
+ *     rainbow wool list.
+ *   - That gate schematics are correctly recoloured via [[SchematicGenerator.pasteGateSchematic]].
+ *   - That input gates receive a colour derived from the outgoing channel's first net.
+ */
 object PaletteTests extends TestSuite {
   import kyo.AllowUnsafe.embrace.danger
   val tests = Tests:
 
+    /**
+     * Verify that [[SchematicContext.getPaletteBlock]] returns white wool when the
+     * context was constructed with the [[Palette.default]] single-entry palette.
+     */
     test("default palette"):
       val ctx = SchematicContext(Map.empty, Palette.default, RepeaterDelay(1))
       // run the effect to obtain a block
@@ -25,6 +41,10 @@ object PaletteTests extends TestSuite {
       )
       assert(block.equals(Block("minecraft:white_wool")))
 
+    /**
+     * Verify that palette entries cycle correctly when there are more pin columns
+     * than colours: pin 3 should map to the same entry as pin 0 for a 3-entry palette.
+     */
     test("cycle multiple"):
       val colors = Chunk(Block("a"), Block("b"), Block("c"))
       val ctx = SchematicContext(Map.empty, colors, RepeaterDelay(1))
@@ -53,12 +73,22 @@ object PaletteTests extends TestSuite {
       assert(r1.equals(Block("b")))
       assert(r3.equals(Block("a")))
 
+    /**
+     * Verify that passing `"rainbow"` to [[Palette.fromStrings]] expands to the
+     * full [[Palette.rainbow]] list and that additional explicit block IDs are
+     * appended after it.
+     */
     test("rainbow alias parsing"):
       val input = Chunk("rainbow", "minecraft:oak_log")
       val pal = Palette.fromStrings(input)
       assert(pal.startsWith(Palette.rainbow))
       assert(pal.last.equals(Block("minecraft:oak_log")))
 
+    /**
+     * Verify that [[SchematicGenerator.pasteGateSchematic]] respects the `color`
+     * override: when a blue wool block is passed as the colour, the pasted structure
+     * should contain blue wool instead of the original white wool.
+     */
     test("gate schematic recoloured"):
       // create a trivial schematic containing a single white wool block
       val single = Structure(BlockPos(1, 1, 1), Chunk(Block("minecraft:white_wool")))
@@ -78,6 +108,11 @@ object PaletteTests extends TestSuite {
 
       assert(colored.blocks.head.id == "minecraft:blue_wool")
 
+    /**
+     * Verify that when [[SchematicGenerator.putLayer]] places an input gate it
+     * derives the gate's colour from the outgoing channel's first net, so that the
+     * gate does not remain white wool.
+     */
     test("input gate recoloured via outgoing channel"):
       // one-input schematic
       val single = Structure(BlockPos(1, 1, 1), Chunk(Block("minecraft:white_wool")))

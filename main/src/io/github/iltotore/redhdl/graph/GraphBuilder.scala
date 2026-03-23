@@ -6,8 +6,29 @@ import io.github.iltotore.redhdl.ast.PortIdentifier
 import io.github.iltotore.redhdl.graph.Graph
 import kyo.*
 
+/**
+ * Translates a simplified Boolean expression tree into a logic [[Graph]].
+ *
+ * The builder works in a ''bottom-up'' fashion: given the [[NodeOutput]] slot that
+ * needs to be driven, it recursively creates the gate nodes required to compute
+ * the expression and wires them together.
+ */
 object GraphBuilder:
 
+  /**
+   * Add the gate nodes for a single [[Expr]] into the current graph so that the
+   * result drives the given `output` slot.
+   *
+   * The method is recursive: compound expressions (NOT, OR, AND, XOR) allocate a
+   * gate node for themselves and then recurse on their sub-expressions, passing
+   * the gate's input slots as the new `output` targets.
+   *
+   * @note Kyo-direct syntax produces a wrong AST for this particular definition,
+   *       so it is written with explicit for-comprehensions and `.map` instead.
+   *
+   * @param output The [[NodeOutput]] slot that the top-level result should be wired to.
+   * @param expr   The expression to compile into graph nodes.
+   */
   // For some reason, Kyo-direct translates to a wrong AST here.
   def buildExprGraph(output: NodeOutput, expr: Expr): Unit < GraphBuilding =
     expr match
@@ -36,6 +57,16 @@ object GraphBuilder:
           _ <- buildExprGraph(NodeOutput(id, 1), right)
         yield ()
 
+  /**
+   * Build the output nodes for a simplified component and wire each output port
+   * to the expression that drives it.
+   *
+   * For every `(outputName, expr)` pair an [[NodeType.Output]] node is created and
+   * [[buildExprGraph]] is called to construct the driver logic.
+   *
+   * @param outputs A map from output port [[Identifier]] to the [[Expr]] that
+   *                computes its value.
+   */
   def buildOutputsGraph(outputs: Map[Identifier, Expr]): Unit < GraphBuilding =
     Kyo.foreachDiscard(outputs)((output, expr) =>
       Graph.addNode(Node(NodeType.Output(output), Chunk.empty))
