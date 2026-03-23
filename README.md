@@ -103,3 +103,12 @@ The compiler contains multiple phases from textual source code to schematic outp
 - Structure generation: the routed graph is compiled to a 3D block array
 - Structure saving: the structure is serialized to GZIP-ed NBT following the [Sponge specification](https://github.com/SpongePowered/Schematic-Specification)
 
+## Credit
+
+Inspired by the [MinecraftHDL](https://github.com/itsfrank/MinecraftHDL) project:
+
+*[1] F. O'Brien, O. Ba Mashmos, and A. Penhale, "MinecraftHDL: A Verilog synthesis flow for Minecraft redstone circuits," *GitHub*, Oct. 2017. \[Online\]. Available: https://github.com/itsfrank/MinecraftHDL. \[Accessed: Mar. 23, 2026\].*
+
+In comparison to MinecraftHDL, RedHDL is developed in pure Scala and uses a custom, purpose-built HDL specifically tailored for redstone, rather than reusing an existing standard like Verilog.
+
+*(Note : there also exists an older project named [minecraft-hdl](https://github.com/cemulate/minecraft-hdl), but it was only discovered late in the development process and did not serve as an inspiration for RedHDL.)*
